@@ -66,7 +66,7 @@ class CPDocusealStack extends Stack {
 
     ecsSecurityGroup.addIngressRule(
       albSecurityGroup,
-      ec2.Port.tcp(3001),
+      ec2.Port.tcp(3000),
       'Allow traffic from ALB'
     );
 
@@ -84,7 +84,7 @@ class CPDocusealStack extends Stack {
     // Target Group for ECS Service
     const targetGroup = new elbv2.ApplicationTargetGroup(this, 'ECSTargetGroup', {
       vpc,
-      port: 3001,
+      port: 3000,
       protocol: elbv2.ApplicationProtocol.HTTP,
       targetType: elbv2.TargetType.INSTANCE,
       healthCheck: {
@@ -179,7 +179,7 @@ class CPDocusealStack extends Stack {
     });
 
     // Add security group rule to EC2 instances for HOST network mode
-    // Allow ALB to reach containers on port 3001
+    // Allow ALB to reach containers on port 3000
     autoScalingGroup.addSecurityGroup(ecsSecurityGroup);
 
     if (userDataScript) {
@@ -215,7 +215,7 @@ class CPDocusealStack extends Stack {
     // Base environment variables
     const containerEnvironment = {
       NODE_ENV: environment,
-      PORT: '3001',
+      PORT: '3000',
       RAILS_ENV: environment
     };
 
@@ -247,7 +247,7 @@ class CPDocusealStack extends Stack {
         }),
         environment: containerEnvironment,
         healthCheck: {
-          command: ['CMD-SHELL', 'curl -f http://localhost:3001/up || exit 1'],
+          command: ['CMD-SHELL', 'curl -f http://localhost:3000/up || exit 1'],
           interval: Duration.seconds(30),
           timeout: Duration.seconds(5),
           retries: 3,
@@ -267,7 +267,7 @@ class CPDocusealStack extends Stack {
       
       // Add port mapping for HOST network mode
       apiContainer.addPortMappings({
-        containerPort: 3001,
+        containerPort: 3000,
         protocol: ecs.Protocol.TCP
       });
 
@@ -317,7 +317,7 @@ class CPDocusealStack extends Stack {
       
       // Add port mapping for HOST network mode
       container.addPortMappings({
-        containerPort: 3001,
+        containerPort: 3000,
         protocol: ecs.Protocol.TCP
       });
     }
