@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-unless ENV['DOCKER_BUILD']
+unless ENV['DOCKER_BUILD'] || ENV['CI_BUILD']
   Airbrake.configure do |config|
     config.project_key = ENV.fetch('AIRBRAKE_KEY')
     config.project_id = ENV.fetch('AIRBRAKE_ID')
