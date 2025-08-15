@@ -123,6 +123,8 @@ fetch_env_variables() {
     export DB_HOST=$(echo "$SECRET_JSON" | jq -r '.host')
     export REDIS_URL=$(echo "$SECRET_JSON" | jq -r '.redis_url')
     export S3_ATTACHMENTS_BUCKET=$(echo "$SECRET_JSON" | jq -r '.s3_attachments_bucket')
+    export AIRBRAKE_ID=$(echo "$SECRET_JSON" | jq -r '.airbrake_id')
+    export AIRBRAKE_KEY=$(echo "$SECRET_JSON" | jq -r '.airbrake_key')
 
     # Validate that we got the values
     if [ "$DB_HOST" = "null" ] || [ "$REDIS_URL" = "null" ] || [ "$S3_ATTACHMENTS_BUCKET" = "null" ] || [ -z "$DB_HOST" ] || [ -z "$REDIS_URL" ] || [ -z "$S3_ATTACHMENTS_BUCKET" ]; then
@@ -140,6 +142,8 @@ fetch_env_variables() {
         grep -v "^DB_HOST=" ./.env.production > ./.env.production.tmp || true
         grep -v "^REDIS_URL=" ./.env.production.tmp > ./.env.production || true
         grep -v "^S3_ATTACHMENTS_BUCKET=" ./.env.production.tmp > ./.env.production || true
+        grep -v "^AIRBRAKE_ID=" ./.env.production.tmp > ./.env.production || true
+        grep -v "^AIRBRAKE_KEY=" ./.env.production.tmp > ./.env.production || true
         rm -f ./.env.production.tmp
     fi
     
@@ -147,6 +151,8 @@ fetch_env_variables() {
     echo "DB_HOST=$DB_HOST" >> ./.env.production
     echo "REDIS_URL=$REDIS_URL" >> ./.env.production
     echo "S3_ATTACHMENTS_BUCKET=$S3_ATTACHMENTS_BUCKET" >> ./.env.production
+    echo "AIRBRAKE_ID=$AIRBRAKE_ID" >> ./.env.production
+    echo "AIRBRAKE_KEY=$AIRBRAKE_KEY" >> ./.env.production
 
     echo "✓ Environment variables successfully retrieved and written to .env.production"
 }

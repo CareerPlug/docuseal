@@ -44,6 +44,8 @@ gem 'turbo-rails'
 gem 'twitter_cldr', require: false
 gem 'tzinfo-data'
 
+gem 'airbrake'
+
 group :development, :test do
   gem 'better_html'
   gem 'bullet'
