@@ -95,9 +95,28 @@ Rails.application.configure do
   # require "syslog/logger"
   # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new "app-name")
 
-  logger           = ActiveSupport::Logger.new($stdout)
-  logger.formatter = config.log_formatter
-  config.logger    = ActiveSupport::TaggedLogging.new(logger)
+  # logger           = ActiveSupport::Logger.new($stdout)
+  # logger.formatter = config.log_formatter
+  # config.logger    = ActiveSupport::TaggedLogging.new(logger)
+
+  # NEWRELIC_MONITOR_MODE enables stdout logger sync for worker/web via NR APM
+  if ENV['NEWRELIC_MONITOR_MODE'].presence
+    config.logger = ActiveSupport::TaggedLogging.new(
+      Logger.new($stdout)
+    )
+
+    config.active_job.logger = ActiveSupport::TaggedLogging.new(
+      Logger.new($stdout)
+    )
+  else
+    config.logger = ActiveSupport::TaggedLogging.new(
+      Syslog::Logger.new('rails-main')
+    )
+
+    config.active_job.logger = ActiveSupport::TaggedLogging.new(
+      Syslog::Logger.new('rails-sidekiq')
+    )
+  end
 
   encryption_secret = ENV['ENCRYPTION_SECRET'].presence || Digest::SHA256.hexdigest(ENV['SECRET_KEY_BASE'].to_s)
 
