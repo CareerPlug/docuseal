@@ -125,11 +125,23 @@ fetch_env_variables() {
     export S3_ATTACHMENTS_BUCKET=$(echo "$SECRET_JSON" | jq -r '.s3_attachments_bucket')
     export AIRBRAKE_ID=$(echo "$SECRET_JSON" | jq -r '.airbrake_id')
     export AIRBRAKE_KEY=$(echo "$SECRET_JSON" | jq -r '.airbrake_key')
+    export NEWRELIC_LICENSE_KEY=$(echo "$SECRET_JSON" | jq -r '.newrelic_license_key')
+    export NEWRELIC_APP_NAME=$(echo "$SECRET_JSON" | jq -r '.newrelic_app_name')
+    export NEWRELIC_LOGS_BUCKET=$(echo "$SECRET_JSON" | jq -r '.newrelic_logs_bucket')
+    export NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=$(echo "$SECRET_JSON" | jq -r '.new_relic_application_logging_forwarding_enabled')
+    export NEWRELIC_MONITOR_MODE=$(echo "$SECRET_JSON" | jq -r '.newrelic_monitor_mode')
+
 
     # Validate that we got the values
     if [ "$DB_HOST" = "null" ] || [ "$REDIS_URL" = "null" ] || [ "$S3_ATTACHMENTS_BUCKET" = "null" ] || [ -z "$DB_HOST" ] || [ -z "$REDIS_URL" ] || [ -z "$S3_ATTACHMENTS_BUCKET" ]; then
         echo "ERROR: Failed to parse variables from secrets"
         echo "Expected JSON format: {\"key\": \"...\", ...}"
+        exit 1
+    fi
+
+    # Validate license keys exist for logging
+    if [ -z "$AIRBRAKE_ID" ] || [ -z "$AIRBRAKE_KEY" ] || [ -z "$NEWRELIC_LICENSE_KEY" ] || [ -z "$NEWRELIC_APP_NAME" ] || [ -z "$NEWRELIC_LOGS_BUCKET" ]; then
+        echo "ERROR: One or more monitor/logging license keys are missing"
         exit 1
     fi
     
@@ -144,6 +156,11 @@ fetch_env_variables() {
         grep -v "^S3_ATTACHMENTS_BUCKET=" ./.env.staging.tmp > ./.env.staging || true
         grep -v "^AIRBRAKE_ID=" ./.env.staging.tmp > ./.env.staging || true
         grep -v "^AIRBRAKE_KEY=" ./.env.staging.tmp > ./.env.staging || true
+        grep -v "^NEWRELIC_LICENSE_KEY=" ./.env.staging.tmp > ./.env.staging || true
+        grep -v "^NEWRELIC_APP_NAME=" ./.env.staging.tmp > ./.env.staging || true
+        grep -v "^NEWRELIC_LOGS_BUCKET=" ./.env.staging.tmp > ./.env.staging || true
+        grep -v "^NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=" ./.env.staging.tmp > ./.env.staging || true
+        grep -v "^NEWRELIC_MONITOR_MODE=" ./.env.staging.tmp > ./.env.staging || true
         rm -f ./.env.staging.tmp
     fi
     
@@ -153,6 +170,11 @@ fetch_env_variables() {
     echo "S3_ATTACHMENTS_BUCKET=$S3_ATTACHMENTS_BUCKET" >> ./.env.staging
     echo "AIRBRAKE_ID=$AIRBRAKE_ID" >> ./.env.staging
     echo "AIRBRAKE_KEY=$AIRBRAKE_KEY" >> ./.env.staging
+    echo "NEWRELIC_LICENSE_KEY=$NEWRELIC_LICENSE_KEY" >> ./.env.staging
+    echo "NEWRELIC_APP_NAME=$NEWRELIC_APP_NAME" >> ./.env.staging
+    echo "NEWRELIC_LOGS_BUCKET=$NEWRELIC_LOGS_BUCKET" >> ./.env.staging
+    echo "NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=$NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED" >> ./.env.staging
+    echo "NEWRELIC_MONITOR_MODE=$NEWRELIC_MONITOR_MODE" >> ./.env.staging
 
     echo "✓ Environment variables successfully retrieved and written to .env.staging"
 }
