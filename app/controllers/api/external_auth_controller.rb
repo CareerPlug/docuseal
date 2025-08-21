@@ -2,7 +2,7 @@
 
 module Api
   class ExternalAuthController < Api::ApiBaseController
-    skip_before_action :authenticate_user_via_token!
+    skip_before_action :authenticate_via_token!
     skip_authorization_check
 
     def get_user_token

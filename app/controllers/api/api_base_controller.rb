@@ -12,7 +12,7 @@ module Api
 
     wrap_parameters false
 
-    before_action :authenticate_user!
+    before_action :authenticate_via_token!
     check_authorization
 
     rescue_from Params::BaseValidator::InvalidParameterError do |e|
@@ -82,6 +82,10 @@ module Api
     end
 
     def authenticate_user!
+      render json: { error: 'Not authenticated' }, status: :unauthorized unless current_user
+    end
+
+    def authenticate_via_token!
       render json: { error: 'Not authenticated' }, status: :unauthorized unless current_user
     end
 
