@@ -44,10 +44,8 @@ gem 'turbo-rails'
 gem 'twitter_cldr', require: false
 gem 'tzinfo-data'
 
-gem 'activejob-uniqueness'
 gem 'airbrake'
-gem 'benchmark-ips', '~> 2.12.0'
-gem 'newrelic_rpm', '~> 9.17.0'
+gem 'newrelic_rpm'
 
 group :development, :test do
   gem 'better_html'
