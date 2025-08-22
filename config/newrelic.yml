@@ -16,7 +16,7 @@ common: &default_settings
 
   # Logging level for log/newrelic_agent.log; options are error, warn, info, or
   # debug.
-  log_level: info
+  log_level: warn
 
   # All of the following configuration options are optional. Review them, and
   # uncomment or edit them if they appear relevant to your application needs.
@@ -1094,6 +1094,7 @@ common: &default_settings
 development:
   <<: *default_settings
   development_mode: true
+  monitor_mode: false
   app_name: Development
 
 test:
