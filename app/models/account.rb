@@ -60,8 +60,8 @@ class Account < ApplicationRecord
   scope :active, -> { where(archived_at: nil) }
 
   def self.find_or_create_by_external_id(external_id, attributes = {})
-    find_by(external_account_id: external_id) || 
-    create!(attributes.merge(external_account_id: external_id))
+    find_by(external_account_id: external_id) ||
+      create!(attributes.merge(external_account_id: external_id))
   end
 
   def testing?

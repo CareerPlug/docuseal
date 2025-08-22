@@ -5,7 +5,7 @@ module Api
     skip_before_action :authenticate_via_token!
     skip_authorization_check
 
-    def get_user_token
+    def user_token
       account = Account.find_or_create_by_external_id(
         params[:account][:external_id].to_i,
         name: params[:account][:name],
@@ -28,7 +28,5 @@ module Api
       Rollbar.error(e) if defined?(Rollbar)
       render json: { error: 'Internal server error' }, status: :internal_server_error
     end
-
-    private
   end
 end

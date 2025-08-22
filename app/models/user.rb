@@ -80,10 +80,12 @@ class User < ApplicationRecord
 
   def self.find_or_create_by_external_id(account, external_id, attributes = {})
     account.users.find_by(external_user_id: external_id) ||
-    account.users.create!(attributes.merge(
-      external_user_id: external_id,
-      password: SecureRandom.hex(16) # They won't login directly
-    ))
+      account.users.create!(
+        attributes.merge(
+          external_user_id: external_id,
+          password: SecureRandom.hex(16)
+        )
+      )
   end
 
   def access_token

@@ -11,7 +11,6 @@ module IframeAuthentication
   def authenticate_from_referer
     return if signed_in?
 
-    # Try standard token sources first
     token = params[:auth_token] || session[:auth_token] || request.headers['X-Auth-Token']
 
     # If no token found, extract from referer URL (iframe page has the token)
@@ -19,19 +18,17 @@ module IframeAuthentication
       referer_uri = URI.parse(request.referer)
       referer_params = CGI.parse(referer_uri.query || '')
       token = referer_params['auth_token']&.first
-      Rails.logger.info "#{self.class.name}: Extracted token from referer: #{token.present? ? '[PRESENT]' : '[MISSING]'}"
     end
 
     if token.present?
       sha256 = Digest::SHA256.hexdigest(token)
       user = User.joins(:access_token).active.find_by(access_token: { sha256: sha256 })
 
-      if user
-        sign_in(user)
-        session[:auth_token] = token
-        Rails.logger.info "#{self.class.name}: Successfully authenticated user #{user.id} from referer token"
-        return
-      end
+      return unless user
+
+      sign_in(user)
+      session[:auth_token] = token
+      return
     end
 
     Rails.logger.error "#{self.class.name}: Authentication failed"

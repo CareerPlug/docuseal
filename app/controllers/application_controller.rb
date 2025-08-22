@@ -105,17 +105,16 @@ class ApplicationController < ActionController::Base
 
     # Check for token in params, session, or X-Auth-Token header
     token = params[:auth_token] || session[:auth_token] || request.headers['X-Auth-Token']
-    return unless token.present?
+    return if token.blank?
 
     # Try to find user by token and sign them in
     sha256 = Digest::SHA256.hexdigest(token)
     user = User.joins(:access_token).active.find_by(access_token: { sha256: sha256 })
 
-    if user
-      sign_in(user)
-      # Store the token in session for future requests
-      session[:auth_token] = token
-    end
+    return unless user
+
+    sign_in(user)
+    session[:auth_token] = token
   end
 
   # Enhanced authentication that tries token auth and fails with error if no user found

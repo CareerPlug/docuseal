@@ -58,7 +58,7 @@ Rails.application.routes.draw do
     end
     resources :external_auth, only: [] do
       collection do
-        post :get_user_token
+        post :user_token
       end
     end
   end
