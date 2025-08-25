@@ -7,7 +7,7 @@ module Api
 
     def user_token
       account = Account.find_or_create_by_external_id(
-        params[:account][:external_id].to_i,
+        params[:account][:external_id]&.to_i,
         name: params[:account][:name],
         locale: params[:account][:locale] || 'en-US',
         timezone: params[:account][:timezone] || 'UTC'
@@ -15,7 +15,7 @@ module Api
 
       user = User.find_or_create_by_external_id(
         account,
-        params[:user][:external_id].to_i,
+        params[:user][:external_id]&.to_i,
         email: params[:user][:email],
         first_name: params[:user][:first_name],
         last_name: params[:user][:last_name],

@@ -81,10 +81,6 @@ module Api
       result
     end
 
-    def authenticate_user!
-      render json: { error: 'Not authenticated' }, status: :unauthorized unless current_user
-    end
-
     def authenticate_via_token!
       render json: { error: 'Not authenticated' }, status: :unauthorized unless current_user
     end
