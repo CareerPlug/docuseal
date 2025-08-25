@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/sh -e
 
 echo "=== CP Docuseal Production Startup ==="
 
@@ -127,6 +127,7 @@ fetch_env_variables() {
     export AIRBRAKE_KEY=$(echo "$SECRET_JSON" | jq -r '.airbrake_key')
     export NEWRELIC_LICENSE_KEY=$(echo "$SECRET_JSON" | jq -r '.newrelic_license_key')
     export NEWRELIC_APP_NAME=$(echo "$SECRET_JSON" | jq -r '.newrelic_app_name')
+    export NEWRELIC_MONITOR_MODE=$(echo "$SECRET_JSON" | jq -r '.newrelic_monitor_mode')
 
     # Validate that we got the values
     if [ "$DB_HOST" = "null" ] || [ "$REDIS_URL" = "null" ] || [ "$S3_ATTACHMENTS_BUCKET" = "null" ] || [ -z "$DB_HOST" ] || [ -z "$REDIS_URL" ] || [ -z "$S3_ATTACHMENTS_BUCKET" ]; then
@@ -136,7 +137,7 @@ fetch_env_variables() {
     fi
 
     # Validate license keys exist for logging
-    if [ -z "$AIRBRAKE_ID" ] || [ -z "$AIRBRAKE_KEY" ] || [ -z "$NEWRELIC_LICENSE_KEY" ] || [ -z "$NEWRELIC_APP_NAME" ] || [ -z "$NEWRELIC_LOGS_BUCKET" ]; then
+    if [ "$AIRBRAKE_ID" = "null" ] || [ "$AIRBRAKE_KEY" = "null" ] || [ "$NEWRELIC_LICENSE_KEY" = "null" ] || [ "$NEWRELIC_APP_NAME" = "null" ]; then
         echo "ERROR: One or more monitor/logging license keys are missing"
         exit 1
     fi
@@ -154,6 +155,7 @@ fetch_env_variables() {
         grep -v "^AIRBRAKE_KEY=" ./.env.production.tmp > ./.env.production || true
         grep -v "^NEWRELIC_LICENSE_KEY=" ./.env.production.tmp > ./.env.production || true
         grep -v "^NEWRELIC_APP_NAME=" ./.env.production.tmp > ./.env.production || true
+        grep -v "^NEWRELIC_MONITOR_MODE=" ./.env.production.tmp > ./.env.production || true
         rm -f ./.env.production.tmp
     fi
     
@@ -165,7 +167,8 @@ fetch_env_variables() {
     echo "AIRBRAKE_KEY=$AIRBRAKE_KEY" >> ./.env.production
     echo "NEWRELIC_LICENSE_KEY=$NEWRELIC_LICENSE_KEY" >> ./.env.production
     echo "NEWRELIC_APP_NAME=$NEWRELIC_APP_NAME" >> ./.env.production
-  
+    echo "NEWRELIC_MONITOR_MODE=$NEWRELIC_MONITOR_MODE" >> ./.env.production
+
     echo "✓ Environment variables successfully retrieved and written to .env.production"
 }
 
@@ -199,7 +202,7 @@ main() {
 
     check_aws_setup
 
-    echo "Starting Integration Station in production mode..."
+    echo "Starting CP Docuseal in production mode..."
     echo "Rails Environment: ${RAILS_ENV:-production}"
     
     # Fetch database credentials from Secrets Manager

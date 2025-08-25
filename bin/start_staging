@@ -138,7 +138,7 @@ fetch_env_variables() {
     fi
 
     # Validate license keys exist for logging
-    if [ -z "$AIRBRAKE_ID" ] || [ -z "$AIRBRAKE_KEY" ] || [ -z "$NEWRELIC_LICENSE_KEY" ] || [ -z "$NEWRELIC_APP_NAME" ] || [ -z "$NEWRELIC_LOGS_BUCKET" ]; then
+    if [ -z "$AIRBRAKE_ID" ] || [ -z "$AIRBRAKE_KEY" ] || [ -z "$NEWRELIC_LICENSE_KEY" ] || [ -z "$NEWRELIC_APP_NAME" ]; then
         echo "ERROR: One or more monitor/logging license keys are missing"
         exit 1
     fi

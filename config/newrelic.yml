@@ -389,7 +389,7 @@ common: &default_settings
   # error_collector.attributes.include: []
 
   # If true, the agent collects TransactionError events.
-  # error_collector.capture_events: true
+  error_collector.capture_events: true
 
   # If true, the agent captures traced errors and error count metrics.
   error_collector.enabled: true
@@ -591,7 +591,7 @@ common: &default_settings
 
   # Controls auto-instrumentation of Net::HTTP at start-up. May be one of: auto,
   # prepend, chain, disabled.
-  # instrumentation.net_http: auto
+  instrumentation.net_http: prepend
 
   # Controls auto-instrumentation of the opensearch-ruby library at start-up. May
   # be one of auto, prepend, chain, disabled.
@@ -661,7 +661,7 @@ common: &default_settings
 
   # Controls auto-instrumentation of the Thread class at start-up to automatically
   # add tracing to all Threads created in the application.
-  # instrumentation.thread.tracing: true
+  instrumentation.thread.tracing: false
 
   # Controls auto-instrumentation of the Tilt template rendering library at
   # start-up. May be one of: auto, prepend, chain, disabled.
@@ -1096,18 +1096,22 @@ development:
   development_mode: true
   monitor_mode: false
   app_name: Development
+  distributed_tracing.enabled: false
 
 test:
   <<: *default_settings
   # It doesn't make sense to report to New Relic from automated test runs.
   monitor_mode: false
+  distributed_tracing.enabled: false
 
 staging:
   <<: *default_settings
   monitor_mode: <%= ENV['NEWRELIC_MONITOR_MODE'].presence || false %>
   app_name: <%= ENV['NEWRELIC_APP_NAME'] %> Staging
+  distributed_tracing.enabled: false
 
 production:
   <<: *default_settings
   app_name: <%= ENV['NEWRELIC_APP_NAME'] %> Production
-  monitor_mode: true
+  monitor_mode: <%= ENV['NEWRELIC_MONITOR_MODE'].presence || true %>
+  distributed_tracing.enabled: false
