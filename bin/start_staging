@@ -71,6 +71,46 @@ fetch_db_credentials() {
     echo "✓ Database credentials successfully retrieved and written to .env.staging"
 }
 
+# Function to fetch allowed hosts from AWS Secrets Manager and write to .env.staging
+fetch_allowed_hosts() {
+    echo "Fetching allowed hosts from AWS Secrets Manager..."
+
+    if [ -z "$ALLOWED_HOSTS_NAME" ]; then
+        echo "ERROR: ALLOWED_HOSTS_NAME environment variable is not set"
+        exit 1
+    fi
+
+    # Fetch the secret value, assume kept as JSON array
+    ALLOWED_HOSTS_JSON=$(aws secretsmanager get-secret-value \
+        --region "$AWS_REGION" \
+        --secret-id "$ALLOWED_HOSTS_NAME" \
+        --query SecretString \
+        --output text)
+
+    if [ $? -ne 0 ] || [ -z "$ALLOWED_HOSTS_JSON" ] || [ "$ALLOWED_HOSTS_JSON" = "null" ]; then
+        echo "ERROR: Failed to retrieve allowed hosts from AWS Secrets Manager"
+        exit 1
+    fi
+
+    # Extract the array and convert to comma-separated string
+    ALLOWED_HOSTS=$(echo "$ALLOWED_HOSTS_JSON" | jq -r '.allowed_hosts | join(",")')
+
+    if [ -z "$ALLOWED_HOSTS" ] || [ "$ALLOWED_HOSTS" = "null" ]; then
+        echo "ERROR: Failed to parse allowed hosts from secrets. Check that the secret contains 'allowed_hosts' key."
+        exit 1
+    fi
+
+    # Remove existing ALLOWED_HOSTS line if it exists
+    if [ -f "./.env.staging" ]; then
+        grep -v "^ALLOWED_HOSTS=" ./.env.staging > ./.env.staging.tmp || true
+        mv ./.env.staging.tmp ./.env.staging
+    fi
+
+    # Append the new allowed hosts
+    echo "ALLOWED_HOSTS=$ALLOWED_HOSTS" >> ./.env.staging
+    echo "✓ Allowed hosts successfully retrieved and written to .env.staging"
+}
+
 # Function to fetch encryption key from AWS Secrets Manager and write to config/master.key
 fetch_encryption_key() {
     echo "Fetching encryption key from AWS Secrets Manager..."
@@ -138,7 +178,7 @@ fetch_env_variables() {
     fi
 
     # Validate license keys exist for logging
-    if [ -z "$AIRBRAKE_ID" ] || [ -z "$AIRBRAKE_KEY" ] || [ -z "$NEWRELIC_LICENSE_KEY" ] || [ -z "$NEWRELIC_APP_NAME" ]; then
+    if [ "$AIRBRAKE_ID" = "null" ] || [ "$AIRBRAKE_KEY" = "null" ] || [ "$NEWRELIC_LICENSE_KEY" = "null" ] || [ "$NEWRELIC_APP_NAME" = "null" ]; then
         echo "ERROR: One or more monitor/logging license keys are missing"
         exit 1
     fi
@@ -211,6 +251,9 @@ main() {
     
     # Fetch encryption key and write to config/master.key
     fetch_encryption_key
+
+    # Fetch allowed hosts from Secrets Manager
+    fetch_allowed_hosts
 
     # Fetch other environment variables from Secrets Manager
     fetch_env_variables

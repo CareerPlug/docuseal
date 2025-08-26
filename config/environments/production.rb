@@ -160,16 +160,10 @@ Rails.application.configure do
   end
 
   config.host_authorization = { exclude: ->(request) { request.path == '/up' } }
-  [
-    /.*\.careerplug\.com\Z/,
-    /.*\.apscareerportal\.com\Z/,
-    /.*\.r365hire\.com\Z/,
-    /.*\.otrecruit\.com\Z/,
-    /.*\.careinhomesjobs\.com\Z/,
-    /.*\.sfagentcareers\.com\Z/,
-    /.*\.sfagentjobs\.com\Z/,
-    /.*\.vzwirelessjobs\.com\Z/,
-    /(^|^www\.)teammemberjobs\.com\Z/,
-    /(^|^www\.)agentaspirant\.com\Z/
-  ].each { |hrexp| config.hosts << hrexp }
+
+  # Load allowed hosts from environment variable
+  allowed_hosts = ENV['ALLOWED_HOSTS']&.split(',')&.map(&:strip) || ['.*\\.careerplug\\.com\\Z']
+
+  config.host_authorization = { exclude: ->(request) { request.path == '/up' } }
+  allowed_hosts.each { |host_pattern| config.hosts << Regexp.new(host_pattern) }
 end

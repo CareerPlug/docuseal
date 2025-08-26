@@ -173,11 +173,9 @@ Rails.application.configure do
     }
   end
 
+  # Load allowed hosts from environment variable
+  allowed_hosts = ENV['ALLOWED_HOSTS']&.split(',')&.map(&:strip) || ['.*\\.careerplug\\.com\\Z']
+
   config.host_authorization = { exclude: ->(request) { request.path == '/up' } }
-  [
-    /.*\.careerplug\.org\Z/,
-    /.*\.careerplug\.com\Z/,
-    /.*\.cpstaging\d\.click\Z/,
-    /.*\.cpstaging\d+\.name\Z/
-  ].each { |hrexp| config.hosts << hrexp }
+  allowed_hosts.each { |host_pattern| config.hosts << Regexp.new(host_pattern) }
 end
