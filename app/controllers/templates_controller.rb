@@ -73,7 +73,7 @@ class TemplatesController < ApplicationController
       
       if current_user.account_group.present?
         @template.account_group = current_user.account_group
-        @template.folder = current_user.account_group.default_template_folder(author: current_user)
+        @template.folder = current_user.account_group.default_template_folder
       elsif current_user.account.present?
         @template.account = current_user.account
         @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])

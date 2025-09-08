@@ -101,7 +101,7 @@ class Template < ApplicationRecord
     if account.present?
       self.folder ||= account.default_template_folder
     elsif account_group.present?
-      self.folder ||= account_group.default_template_folder(author: author)
+      self.folder ||= account_group.default_template_folder
     end
   end
 end

@@ -16,6 +16,8 @@
 #
 class AccountGroup < ApplicationRecord
   has_many :accounts, dependent: :nullify
+  has_many :users, dependent: :nullify
+  has_many :templates, dependent: :destroy
   has_many :template_folders, dependent: :destroy
 
   validates :external_account_group_id, presence: true, uniqueness: true
@@ -26,11 +28,8 @@ class AccountGroup < ApplicationRecord
       create!(attributes.merge(external_account_group_id: external_id))
   end
 
-  def default_template_folder(author:)
-    template_folders.find_by(name: TemplateFolder::DEFAULT_NAME) ||
-      template_folders.create!(
-        name: TemplateFolder::DEFAULT_NAME,
-        author: author
-      )
+  def default_template_folder
+    super || build_default_template_folder(name: TemplateFolder::DEFAULT_NAME,
+                                           author_id: users.minimum(:id)).tap(&:save!)
   end
 end
