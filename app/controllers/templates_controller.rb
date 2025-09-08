@@ -74,19 +74,10 @@ class TemplatesController < ApplicationController
       TemplateService.new(@template, current_user, params).assign_ownership
     end
 
-    if params[:account_id].present? && authorized_clone_account_id?(params[:account_id])
-      @template.account_id = params[:account_id]
-      @template.account_group = nil
-      @template.folder = @template.account.default_template_folder if @template.account_id != current_account&.id
-    end
+    handle_account_override if params[:account_id].present?
 
     if @template.save
-      Templates::CloneAttachments.call(template: @template, original_template: @base_template) if @base_template
-
-      SearchEntries.enqueue_reindex(@template)
-
-      enqueue_template_created_webhooks(@template)
-
+      handle_successful_template_creation
       maybe_redirect_to_template(@template)
     else
       Rails.logger.error "Template save failed: #{@template.errors.full_messages.join(', ')}"
@@ -167,6 +158,20 @@ class TemplatesController < ApplicationController
       SendTemplateUpdatedWebhookRequestJob.perform_async('template_id' => template.id,
                                                          'webhook_url_id' => webhook_url.id)
     end
+  end
+
+  def handle_account_override
+    return unless authorized_clone_account_id?(params[:account_id])
+
+    @template.account_id = params[:account_id]
+    @template.account_group = nil
+    @template.folder = @template.account.default_template_folder if @template.account_id != current_account&.id
+  end
+
+  def handle_successful_template_creation
+    Templates::CloneAttachments.call(template: @template, original_template: @base_template) if @base_template
+    SearchEntries.enqueue_reindex(@template)
+    enqueue_template_created_webhooks(@template)
   end
 
   def load_base_template
