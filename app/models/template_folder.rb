@@ -26,13 +26,14 @@
 #  fk_rails_...  (author_id => users.id)
 #
 class TemplateFolder < ApplicationRecord
+  include AccountGroupValidation
+
   DEFAULT_NAME = 'Default'
 
   belongs_to :author, class_name: 'User'
   belongs_to :account, optional: true
   belongs_to :account_group, optional: true
 
-  validate :must_belong_to_account_or_account_group
 
   has_many :templates, dependent: :destroy, foreign_key: :folder_id, inverse_of: :folder
   has_many :active_templates, -> { where(archived_at: nil) },
@@ -42,15 +43,5 @@ class TemplateFolder < ApplicationRecord
 
   def default?
     name == DEFAULT_NAME
-  end
-
-  private
-
-  def must_belong_to_account_or_account_group
-    if account.blank? && account_group.blank?
-      errors.add(:base, 'Folder must belong to either an account or account group')
-    elsif account.present? && account_group.present?
-      errors.add(:base, 'Folder cannot belong to both account and account group')
-    end
   end
 end

@@ -42,6 +42,8 @@
 #  fk_rails_...  (folder_id => template_folders.id)
 #
 class Template < ApplicationRecord
+  include AccountGroupValidation
+
   DEFAULT_SUBMITTER_NAME = 'First Party'
 
   belongs_to :author, class_name: 'User'
@@ -49,7 +51,6 @@ class Template < ApplicationRecord
   belongs_to :account_group, optional: true
   belongs_to :folder, class_name: 'TemplateFolder'
 
-  validate :must_belong_to_account_or_account_group
 
   has_one :search_entry, as: :record, inverse_of: :record, dependent: :destroy
 
@@ -88,14 +89,6 @@ class Template < ApplicationRecord
   end
 
   private
-
-  def must_belong_to_account_or_account_group
-    if account.blank? && account_group.blank?
-      errors.add(:base, 'Template must belong to either an account or account group')
-    elsif account.present? && account_group.present?
-      errors.add(:base, 'Template cannot belong to both account and account group')
-    end
-  end
 
   def maybe_set_default_folder
     if account.present?

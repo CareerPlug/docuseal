@@ -48,6 +48,8 @@
 #  fk_rails_...  (account_id => accounts.id)
 #
 class User < ApplicationRecord
+  include AccountGroupValidation
+
   ROLES = [
     ADMIN_ROLE = 'admin'
   ].freeze
@@ -63,7 +65,6 @@ class User < ApplicationRecord
   belongs_to :account, optional: true
   belongs_to :account_group, optional: true
 
-  validate :must_belong_to_account_or_account_group
   has_one :access_token, dependent: :destroy
   has_many :access_tokens, dependent: :destroy
   has_many :templates, dependent: :destroy, foreign_key: :author_id, inverse_of: :author
@@ -95,10 +96,9 @@ class User < ApplicationRecord
   end
 
   def self.find_or_create_by_external_group_id(account_group, external_id, attributes = {})
-    where(account_group: account_group, external_user_id: external_id).first ||
-      create!(
+    account_group.users.find_by(external_user_id: external_id) ||
+      account_group.users.create!(
         attributes.merge(
-          account_group: account_group,
           external_user_id: external_id,
           password: SecureRandom.hex(16)
         )
@@ -144,16 +144,6 @@ class User < ApplicationRecord
       %("#{full_name.delete('"')}" <#{email}>)
     else
       email
-    end
-  end
-
-  private
-
-  def must_belong_to_account_or_account_group
-    if account.blank? && account_group.blank?
-      errors.add(:base, 'User must belong to either an account or account group')
-    elsif account.present? && account_group.present?
-      errors.add(:base, 'User cannot belong to both account and account group')
     end
   end
 end
