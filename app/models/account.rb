@@ -65,18 +65,10 @@ class Account < ApplicationRecord
   validates :external_account_id, uniqueness: true, allow_nil: true
 
   scope :active, -> { where(archived_at: nil) }
-  scope :in_same_group, ->(account) {
-    where(account_group_id: account.account_group_id).where.not(account_group_id: nil)
-  }
 
   def self.find_or_create_by_external_id(external_id, attributes = {})
     find_by(external_account_id: external_id) ||
       create!(attributes.merge(external_account_id: external_id))
-  end
-
-  def linked_accounts_in_group
-    return Account.none unless account_group_id
-    account_group.accounts.where.not(id: id)
   end
 
   def testing?

@@ -78,19 +78,6 @@ RSpec.describe Account do
       account.update!(account_group: account_group)
       expect(account.reload.account_group).to eq(account_group)
     end
-
-    it 'finds linked_accounts in same group' do
-      account_group = create(:account_group)
-      account1 = create(:account, account_group: account_group)
-      account2 = create(:account, account_group: account_group)
-      account3 = create(:account)
-
-      linked_accounts = account1.linked_accounts_in_group
-
-      expect(linked_accounts).to include(account2)
-      expect(linked_accounts).not_to include(account1)
-      expect(linked_accounts).not_to include(account3)
-    end
   end
 
   describe '#default_template_folder' do
