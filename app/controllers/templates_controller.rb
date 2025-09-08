@@ -70,14 +70,8 @@ class TemplatesController < ApplicationController
     else
       @template = Template.new(template_params) if @template.nil?
       @template.author = current_user
-      
-      if current_user.account_group.present?
-        @template.account_group = current_user.account_group
-        @template.folder = current_user.account_group.default_template_folder
-      elsif current_user.account.present?
-        @template.account = current_user.account
-        @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
-      end
+
+      TemplateService.new(@template, current_user, params).assign_ownership
     end
 
     if params[:account_id].present? && authorized_clone_account_id?(params[:account_id])
@@ -86,8 +80,6 @@ class TemplatesController < ApplicationController
       @template.folder = @template.account.default_template_folder if @template.account_id != current_account&.id
     end
 
-    Rails.logger.info "Template before save: account_id=#{@template.account_id}, account_group_id=#{@template.account_group_id}, folder_id=#{@template.folder_id}, author_id=#{@template.author_id}"
-    
     if @template.save
       Templates::CloneAttachments.call(template: @template, original_template: @base_template) if @base_template
 
