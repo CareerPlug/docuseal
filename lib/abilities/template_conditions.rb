@@ -5,9 +5,15 @@ module Abilities
     module_function
 
     def collection(user, ability: nil)
-      templates = Template.where(account_id: user.account_id)
-
-      return templates unless user.account.testing?
+      if user.account_id.present?
+        templates = Template.where(account_id: user.account_id)
+        return templates unless user.account.testing?
+      elsif user.account_group_id.present?
+        templates = Template.where(account_group_id: user.account_group_id)
+        return templates
+      else
+        return Template.none
+      end
 
       shared_ids =
         TemplateSharing.where({ ability:, account_id: [user.account_id, TemplateSharing::ALL_ID] }.compact)
@@ -17,9 +23,10 @@ module Abilities
     end
 
     def entity(template, user:, ability: nil)
-      return true if template.account_id.blank?
+      return true if template.account_id.blank? && template.account_group_id.blank?
       return true if template.account_id == user.account_id
-      return false unless user.account.linked_account_account
+      return true if template.account_group_id == user.account_group_id
+      return false unless user.account&.linked_account_account
       return false if template.template_sharings.to_a.blank?
 
       account_ids = [user.account_id, TemplateSharing::ALL_ID]

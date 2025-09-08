@@ -31,6 +31,14 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     resource :user, only: %i[show]
     resources :attachments, only: %i[create]
+    resources :account_groups, only: [] do
+      collection do
+        post :create_or_update
+        post :update_account_membership
+      end
+      
+      resources :templates, only: [:create], controller: 'account_groups/templates'
+    end
     resources :submitter_email_clicks, only: %i[create]
     resources :submitter_form_views, only: %i[create]
     resources :submitters, only: %i[index show update]

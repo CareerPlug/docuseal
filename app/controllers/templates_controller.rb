@@ -70,16 +70,24 @@ class TemplatesController < ApplicationController
     else
       @template = Template.new(template_params) if @template.nil?
       @template.author = current_user
-      @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
+      
+      if current_user.account_group.present?
+        @template.account_group = current_user.account_group
+        @template.folder = current_user.account_group.default_template_folder(author: current_user)
+      elsif current_user.account.present?
+        @template.account = current_user.account
+        @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
+      end
     end
 
     if params[:account_id].present? && authorized_clone_account_id?(params[:account_id])
       @template.account_id = params[:account_id]
-      @template.folder = @template.account.default_template_folder if @template.account_id != current_account.id
-    else
-      @template.account = current_account
+      @template.account_group = nil
+      @template.folder = @template.account.default_template_folder if @template.account_id != current_account&.id
     end
 
+    Rails.logger.info "Template before save: account_id=#{@template.account_id}, account_group_id=#{@template.account_group_id}, folder_id=#{@template.folder_id}, author_id=#{@template.author_id}"
+    
     if @template.save
       Templates::CloneAttachments.call(template: @template, original_template: @base_template) if @base_template
 
@@ -89,6 +97,7 @@ class TemplatesController < ApplicationController
 
       maybe_redirect_to_template(@template)
     else
+      Rails.logger.error "Template save failed: #{@template.errors.full_messages.join(', ')}"
       render turbo_stream: turbo_stream.replace(:modal, template: 'templates/new'), status: :unprocessable_entity
     end
   end
@@ -126,7 +135,7 @@ class TemplatesController < ApplicationController
 
   def template_params
     params.require(:template).permit(
-      :name,
+      :name, :external_id,
       { schema: [[:attachment_uuid, :name, { conditions: [%i[field_uuid value action operation]] }]],
         submitters: [%i[name uuid is_requester linked_to_uuid invite_by_uuid optional_invite_by_uuid email]],
         external_data_fields: {},

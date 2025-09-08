@@ -12,16 +12,23 @@
 #  uuid                :string           not null
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
+#  account_group_id    :bigint
 #  external_account_id :integer
 #
 # Indexes
 #
+#  index_accounts_on_account_group_id     (account_group_id)
 #  index_accounts_on_external_account_id  (external_account_id) UNIQUE
 #  index_accounts_on_uuid                 (uuid) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_group_id => account_groups.id)
 #
 class Account < ApplicationRecord
   attribute :uuid, :string, default: -> { SecureRandom.uuid }
 
+  belongs_to :account_group, optional: true
   has_many :users, dependent: :destroy
   has_many :encrypted_configs, dependent: :destroy
   has_many :account_configs, dependent: :destroy
@@ -58,10 +65,18 @@ class Account < ApplicationRecord
   validates :external_account_id, uniqueness: true, allow_nil: true
 
   scope :active, -> { where(archived_at: nil) }
+  scope :in_same_group, ->(account) {
+    where(account_group_id: account.account_group_id).where.not(account_group_id: nil)
+  }
 
   def self.find_or_create_by_external_id(external_id, attributes = {})
     find_by(external_account_id: external_id) ||
       create!(attributes.merge(external_account_id: external_id))
+  end
+
+  def linked_accounts_in_group
+    return Account.none unless account_group_id
+    account_group.accounts.where.not(id: id)
   end
 
   def testing?
