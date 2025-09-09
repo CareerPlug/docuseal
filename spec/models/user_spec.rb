@@ -143,4 +143,26 @@ RSpec.describe User do
       expect(user.friendly_name).to eq('john@example.com')
     end
   end
+
+  describe '.find_or_create_by_external_group_id' do
+    let(:account_group) { create(:account_group) }
+    let(:attributes) { { email: 'test@example.com', first_name: 'John' } }
+
+    it 'finds existing user by external_user_id and account_group' do
+      existing_user = create(:user, account: nil, account_group: account_group, external_user_id: 123)
+
+      result = described_class.find_or_create_by_external_group_id(account_group, 123, attributes)
+
+      expect(result).to eq(existing_user)
+    end
+
+    it 'creates new user when not found' do
+      result = described_class.find_or_create_by_external_group_id(account_group, 456, attributes)
+
+      expect(result.account_group).to eq(account_group)
+      expect(result.external_user_id).to eq(456)
+      expect(result.email).to eq('test@example.com')
+      expect(result.password).to be_present
+    end
+  end
 end

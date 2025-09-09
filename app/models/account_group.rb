@@ -29,7 +29,8 @@ class AccountGroup < ApplicationRecord
   end
 
   def default_template_folder
-    super || build_default_template_folder(name: TemplateFolder::DEFAULT_NAME,
-                                           author_id: users.minimum(:id)).tap(&:save!)
+    template_folders.find_by(name: TemplateFolder::DEFAULT_NAME) ||
+      template_folders.create!(name: TemplateFolder::DEFAULT_NAME,
+                               author_id: users.minimum(:id))
   end
 end
