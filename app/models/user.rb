@@ -110,6 +110,8 @@ class User < ApplicationRecord
   end
 
   def active_for_authentication?
+    return false unless account.present? || account_group.present?
+
     super && !archived_at? && !account&.archived_at?
   end
 

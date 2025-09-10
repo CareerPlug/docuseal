@@ -8,7 +8,7 @@
 #  name                      :string           not null
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
-#  external_account_group_id :string           not null
+#  external_account_group_id :integer          not null
 #
 # Indexes
 #
@@ -31,8 +31,8 @@ describe AccountGroup do
     end
 
     it 'validates uniqueness of external_account_group_id' do
-      create(:account_group, external_account_group_id: 'test123')
-      duplicate = build(:account_group, external_account_group_id: 'test123')
+      create(:account_group, external_account_group_id: 123)
+      duplicate = build(:account_group, external_account_group_id: 123)
       expect(duplicate).not_to be_valid
       expect(duplicate.errors[:external_account_group_id]).to include('has already been taken')
     end

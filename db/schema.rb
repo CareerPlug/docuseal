@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_03_190000) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_10_191227) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gin"
   enable_extension "pg_catalog.plpgsql"
@@ -44,7 +44,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_03_190000) do
   end
 
   create_table "account_groups", force: :cascade do |t|
-    t.string "external_account_group_id", null: false
+    t.integer "external_account_group_id", null: false
     t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
