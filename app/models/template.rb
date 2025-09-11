@@ -44,7 +44,7 @@
 class Template < ApplicationRecord
   include AccountGroupValidation
 
-  DEFAULT_SUBMITTER_NAME = 'First Party'
+  DEFAULT_SUBMITTER_NAME = 'Employee'
 
   belongs_to :author, class_name: 'User'
   belongs_to :account, optional: true
