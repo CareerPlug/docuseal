@@ -5,15 +5,15 @@ module Abilities
   # Only account users can access submissions (account_group users create templates).
   # Supports account group inheritance and global template access patterns.
   module SubmissionConditions
-    extend self
+    module_function
 
-    def collection(user)
+    def collection(user, ability: nil)
       return [] if user.account_id.blank?
 
       submissions_for_user(user)
     end
 
-    def entity(submission, user:)
+    def entity(submission, user:, ability: nil)
       # Only account users can access submissions
       return false if user.account_id.blank?
 
@@ -29,8 +29,6 @@ module Abilities
       end
       false
     end
-
-    private
 
     def submissions_for_user(user)
       # For collection access, we still need to get all submissions the user can access
