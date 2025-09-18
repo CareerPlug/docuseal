@@ -21,7 +21,8 @@ module Abilities
 
         return combined_templates unless user.account.testing?
 
-        shared_template_ids = TemplateSharing.where({ ability:, account_id: [user.account_id, TemplateSharing::ALL_ID] }.compact)
+        shared_template_ids = TemplateSharing.where({ ability:,
+                                                      account_id: [user.account_id, TemplateSharing::ALL_ID] }.compact)
                                              .pluck(:template_id)
 
         all_template_ids = (template_ids + shared_template_ids).uniq
@@ -52,9 +53,8 @@ module Abilities
         return true if user.account_id.present? && user.account.account_group_id == template.account_group_id
 
         # Check if template belongs to global account group (accessible to all)
-        return true if ExportLocation.global_account_group_id.present? &&
-                      template.account_group_id == ExportLocation.global_account_group_id
-        
+        return true if global_template?(template)
+
         return false
       end
 
@@ -65,10 +65,19 @@ module Abilities
       return false unless user.account&.linked_account_account
       return false if template.template_sharings.to_a.blank?
 
+      template_sharing_accessible?(template, user, ability)
+    end
+
+    def global_template?(template)
+      ExportLocation.global_account_group_id.present? &&
+        template.account_group_id == ExportLocation.global_account_group_id
+    end
+
+    def template_sharing_accessible?(template, user, ability)
       account_ids = [user.account_id, TemplateSharing::ALL_ID]
       template.template_sharings.to_a.any? do |sharing|
-        sharing.account_id.in?(account_ids) && 
-        (ability.nil? || sharing.ability == 'manage' || sharing.ability == ability)
+        sharing.account_id.in?(account_ids) &&
+          (ability.nil? || sharing.ability == 'manage' || sharing.ability == ability)
       end
     end
   end

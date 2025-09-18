@@ -7,13 +7,13 @@ module Abilities
   module SubmissionConditions
     module_function
 
-    def collection(user, ability: nil)
+    def collection(user)
       return [] if user.account_id.blank?
 
       submissions_for_user(user)
     end
 
-    def entity(submission, user:, ability: nil)
+    def entity(submission, user:)
       # Only account users can access submissions
       return false if user.account_id.blank?
 
@@ -36,7 +36,7 @@ module Abilities
       accessible_template_ids = accessible_template_ids(user)
 
       Submission.where(
-        'account_id = ? OR template_id IN (?)',
+        'submissions.account_id = ? OR submissions.template_id IN (?)',
         user.account_id,
         accessible_template_ids
       )
