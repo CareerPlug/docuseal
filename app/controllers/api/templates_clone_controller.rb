@@ -6,9 +6,7 @@ module Api
 
     def create
       # Handle cloning from account group templates to specific accounts
-      if params[:account_id].present? && @template.account_group_id.present?
-        return clone_from_account_group_to_account
-      end
+      return clone_from_account_group_to_account if params[:account_id].present? && @template.account_group_id.present?
 
       authorize!(:create, @template)
 
@@ -19,16 +17,28 @@ module Api
     private
 
     def clone_from_account_group_to_account
-      target_account = Account.find_by(external_account_id: params[:account_id])
+      cloned_template = Templates::CloneToAccount.call(
+        @template,
+        external_account_id: params[:account_id],
+        current_user: current_user,
+        author: current_user,
+        name: params[:name],
+        external_id: params[:external_id].presence || params[:application_key],
+        folder_name: params[:folder_name]
+      )
 
-      # Verify current user has access to the target account
-      unless current_user.account_id == target_account.id
-        render json: { error: 'Unauthorized access to target account' }, status: :forbidden
-        return
-      end
-
-      cloned_template = clone_template_with_service(Templates::CloneToAccount, @template, target_account: target_account)
+      cloned_template.source = :api
       finalize_and_render_response(cloned_template)
+    rescue ArgumentError => e
+      if e.message.include?('Unauthorized')
+        render json: { error: e.message }, status: :forbidden
+      elsif e.message.include?('must be an account group template')
+        render json: { error: e.message }, status: :unprocessable_entity
+      else
+        render json: { error: e.message }, status: :bad_request
+      end
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: e.message }, status: :not_found
     end
 
     def clone_template_with_service(service_class, template, **extra_args)

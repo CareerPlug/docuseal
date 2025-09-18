@@ -12,7 +12,7 @@ class Ability
     can :manage, TemplateFolder, account_id: user.account_id
     can :manage, TemplateSharing, template: { account_id: user.account_id }
     can %i[read create update destroy], Submission, Abilities::SubmissionConditions.collection(user) do |submission|
-      Abilities::SubmissionConditions.entity(submission, user:, ability: 'manage')
+      Abilities::SubmissionConditions.entity(submission, user:)
     end
     can :manage, Submitter, account_id: user.account_id
     can :manage, User, account_id: user.account_id

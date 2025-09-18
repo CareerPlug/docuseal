@@ -5,8 +5,9 @@ module Templates
     module_function
 
     # rubocop:disable Metrics, Style/CombinableLoops
-    def call(original_template, author:, external_id: nil, name: nil, folder_name: nil)
-      template = original_template.account.templates.new
+    def call(original_template, author:, external_id: nil, name: nil, folder_name: nil, target_account: nil)
+      account = target_account || original_template.account
+      template = account.templates.new
 
       template.external_id = external_id
       template.shared_link = original_template.shared_link
