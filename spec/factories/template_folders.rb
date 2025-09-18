@@ -12,5 +12,11 @@ FactoryBot.define do
         create_list(:template, 2, folder: template_folder, account: template_folder.account)
       end
     end
+
+    trait :account_group_folder do
+      account { nil }
+      account_group
+      author { association :user, account: nil, account_group: account_group }
+    end
   end
 end

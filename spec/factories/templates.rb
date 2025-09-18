@@ -357,5 +357,34 @@ FactoryBot.define do
         create(:template_access, template:, user: ev.private_access_user || template.author)
       end
     end
+
+    trait :account_group_template do
+      account { nil }
+      account_group
+      author { association :user, account: nil, account_group: account_group }
+    end
+
+    trait :global_template do
+      transient do
+        global_account_group { create(:account_group) }
+      end
+
+      account { nil }
+      account_group { global_account_group }
+      author { association :user, account: nil, account_group: global_account_group }
+    end
+
+    trait :with_folder do
+      after(:build) do |template|
+        if template.account_group_id.present?
+          folder = create(
+            :template_folder, account: nil, account_group_id: template.account_group_id, author: template.author
+          )
+        else
+          folder = create(:template_folder, account: template.account, author: template.author)
+        end
+        template.folder = folder
+      end
+    end
   end
 end

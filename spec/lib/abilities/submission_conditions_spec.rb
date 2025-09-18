@@ -30,7 +30,7 @@ RSpec.describe Abilities::SubmissionConditions do
     end
 
     it 'returns true when user account group matches template account group' do
-      template = double('Template', account_group_id: account_group.id)
+      template = instance_double(Template, account_group_id: account_group.id)
       submission = build(:submission, account: create(:account), template: template, template_id: 123)
       allow(Template).to receive(:find_by).with(id: 123).and_return(template)
 
@@ -41,7 +41,7 @@ RSpec.describe Abilities::SubmissionConditions do
       global_account_group = create(:account_group)
       allow(ExportLocation).to receive(:global_account_group_id).and_return(global_account_group.id)
 
-      template = double('Template', account_group_id: global_account_group.id)
+      template = instance_double(Template, account_group_id: global_account_group.id)
       submission = build(:submission, account: create(:account), template: template, template_id: 123)
       allow(Template).to receive(:find_by).with(id: 123).and_return(template)
 
@@ -50,7 +50,7 @@ RSpec.describe Abilities::SubmissionConditions do
 
     it 'returns false for inaccessible template submissions' do
       other_account_group = create(:account_group)
-      template = double('Template', account_group_id: other_account_group.id)
+      template = instance_double(Template, account_group_id: other_account_group.id)
       submission = build(:submission, account: create(:account), template: template, template_id: 123)
       allow(Template).to receive(:find_by).with(id: 123).and_return(template)
 

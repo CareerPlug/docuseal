@@ -29,5 +29,25 @@ FactoryBot.define do
         end
       end
     end
+
+    trait :with_user do
+      after(:create) do |account|
+        create(:user, account: account)
+      end
+    end
+
+    trait :with_folder do
+      after(:create) do |account|
+        user = account.users.first || create(:user, account: account)
+        create(:template_folder, account: account, author: user)
+      end
+    end
+
+    trait :with_user_and_folder do
+      after(:create) do |account|
+        user = create(:user, account: account)
+        create(:template_folder, account: account, author: user)
+      end
+    end
   end
 end
