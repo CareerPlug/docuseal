@@ -4,16 +4,17 @@
 #
 # Table name: export_locations
 #
-#  id                   :bigint           not null, primary key
-#  api_base_url         :string           not null
-#  authorization_token  :string
-#  default_location     :boolean          default(FALSE), not null
-#  extra_params         :jsonb            not null
-#  name                 :string           not null
-#  submissions_endpoint :string
-#  templates_endpoint   :string
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
+#  id                      :bigint           not null, primary key
+#  api_base_url            :string           not null
+#  authorization_token     :string
+#  default_location        :boolean          default(FALSE), not null
+#  extra_params            :jsonb            not null
+#  name                    :string           not null
+#  submissions_endpoint    :string
+#  templates_endpoint      :string
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  global_account_group_id :integer
 #
 class ExportLocation < ApplicationRecord
   validates :name, presence: true
@@ -21,5 +22,9 @@ class ExportLocation < ApplicationRecord
 
   def self.default_location
     where(default_location: true).first || ExportLocation.first
+  end
+
+  def self.global_account_group_id
+    default_location&.global_account_group_id
   end
 end

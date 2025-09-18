@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_10_191227) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_15_213745) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gin"
   enable_extension "pg_catalog.plpgsql"
@@ -238,6 +238,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_10_191227) do
     t.datetime "updated_at", null: false
     t.jsonb "extra_params", default: {}, null: false
     t.string "submissions_endpoint"
+    t.integer "global_account_group_id"
   end
 
   create_table "oauth_access_grants", force: :cascade do |t|
