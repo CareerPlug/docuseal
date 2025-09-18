@@ -18,7 +18,8 @@ module Submitters
     module_function
 
     def call(submitter, keys = [])
-      configs = submitter.submission.account.account_configs.where(key: DEFAULT_KEYS + keys)
+      account = submitter.submission.account
+      configs = account&.account_configs&.where(key: DEFAULT_KEYS + keys) || []
 
       completed_button = find_safe_value(configs, AccountConfig::FORM_COMPLETED_BUTTON_KEY) || {}
       completed_message = find_safe_value(configs, AccountConfig::FORM_COMPLETED_MESSAGE_KEY) || {}

@@ -1,0 +1,3 @@
+detectors:
+  DuplicateMethodCall:
+    max_calls: 3
