@@ -27,7 +27,7 @@ class Partnership < ApplicationRecord
   end
 
   def default_template_folder(author)
-    raise ArgumentError, "Author is required for partnership template folders" unless author
+    raise ArgumentError, 'Author is required for partnership template folders' unless author
 
     template_folders.find_by(name: TemplateFolder::DEFAULT_NAME) ||
       template_folders.create!(name: TemplateFolder::DEFAULT_NAME,

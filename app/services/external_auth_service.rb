@@ -56,12 +56,12 @@ class ExternalAuthService
 
   def ensure_partnerships_exist
     # Create the partnership if it doesn't exist in DocuSeal
-    if @params[:partnership].present?
-      Partnership.find_or_create_by_external_id(
-        @params[:partnership][:external_id],
-        @params[:partnership][:name]
-      )
-    end
+    return if @params[:partnership].blank?
+
+    Partnership.find_or_create_by_external_id(
+      @params[:partnership][:external_id],
+      @params[:partnership][:name]
+    )
   end
 
   def user_attributes

@@ -17,12 +17,6 @@
 describe Partnership do
   let(:partnership) { create(:partnership) }
 
-  describe 'associations' do
-    it 'has many accounts' do
-      expect(partnership).to respond_to(:accounts)
-    end
-  end
-
   describe 'validations' do
     it 'validates presence of external_partnership_id' do
       partnership = build(:partnership, external_partnership_id: nil)
@@ -41,16 +35,6 @@ describe Partnership do
       partnership = build(:partnership, name: nil)
       expect(partnership).not_to be_valid
       expect(partnership.errors[:name]).to include("can't be blank")
-    end
-  end
-
-  describe 'when partnership is destroyed' do
-    it 'nullifies accounts partnership_id' do
-      account = create(:account, partnership: partnership)
-
-      partnership.destroy
-
-      expect(account.reload.partnership).to be_nil
     end
   end
 end

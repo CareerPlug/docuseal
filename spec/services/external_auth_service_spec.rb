@@ -16,7 +16,9 @@ RSpec.describe ExternalAuthService do
     context 'with account params' do
       let(:params) do
         {
-          account: { external_id: 456, name: 'Test Account' },
+          account: {
+            external_id: '456', name: 'Test Account', locale: 'en-US', timezone: 'UTC', entity_type: 'Account'
+          },
           user: user_params
         }
       end
@@ -42,7 +44,9 @@ RSpec.describe ExternalAuthService do
     context 'with partnership params' do
       let(:params) do
         {
-          partnership: { external_id: 789, name: 'Test Group' },
+          partnership: {
+            external_id: '789', name: 'Test Group', locale: 'en-US', timezone: 'UTC', entity_type: 'Partnership'
+          },
           user: user_params
         }
       end
@@ -51,7 +55,7 @@ RSpec.describe ExternalAuthService do
         token = described_class.new(params).authenticate_user
 
         expect(token).to be_present
-        expect(Partnership.last.external_id).to eq(789)
+        expect(Partnership.last.external_partnership_id).to eq(789)
         expect(User.last.external_user_id).to eq(123)
       end
     end
