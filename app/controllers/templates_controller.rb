@@ -164,7 +164,7 @@ class TemplatesController < ApplicationController
     return unless authorized_clone_account_id?(params[:account_id])
 
     @template.account_id = params[:account_id]
-    @template.partnership = nil
+    @template.account_group = nil
     @template.folder = @template.account.default_template_folder if @template.account_id != current_account&.id
   end
 
