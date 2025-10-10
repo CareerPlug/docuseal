@@ -1,0 +1,19 @@
+# Development environment - uses local credentials
+development:
+  cf_key_secret: 'devstaging/cloudfront/private_key'
+  cf_key_pair: 'K27S17AP1X6D5X'
+  cf_url: 'https://d2a03gxhecsr4f.cloudfront.net'
+
+# Staging environment - uses IAM role for S3 access (ECS task role)
+# CloudFront key loaded from Secrets Manager via initializer
+staging:
+  cf_key_secret: 'devstaging/cloudfront/private_key'
+  cf_key_pair: 'K27S17AP1X6D5X'
+  cf_url: 'https://d2a03gxhecsr4f.cloudfront.net'
+
+# Production environment - uses IAM role for S3 access (ECS task role)
+# CloudFront key loaded from Secrets Manager via initializer
+production:
+  cf_key_secret: 'prod/cloudfront/private_key'
+  cf_key_pair: 'K34D2ENKLCYKLR'
+  cf_url: 'https://d2qi5hlon214hc.cloudfront.net'
