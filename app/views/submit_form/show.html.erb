@@ -85,15 +85,14 @@
                   <% next if field['conditions'].present? && field['submitter_uuid'] == @submitter.uuid %>
                   <% next if field.dig('preferences', 'formula').present? && field['submitter_uuid'] == @submitter.uuid %>
                   <%= render 'submissions/value',
-                    area:,
-                    field:,
-                    attachments_index: @attachments_index,
-                    value: field.dig('preferences', 'mask').present? ? TextUtils.mask_value(value, field.dig('preferences', 'mask')) : value,
-                    locale: @submitter.account&.locale || 'en',
-                    timezone: @submitter.account&.timezone || 'UTC',
-                    submitter: submitters_index[field['submitter_uuid']],
-                    with_signature_id: @form_configs[:with_signature_id]
-                  %>
+                             area:,
+                             field:,
+                             attachments_index: @attachments_index,
+                             value: field.dig('preferences', 'mask').present? ? TextUtils.mask_value(value, field.dig('preferences', 'mask')) : value,
+                             locale: @submitter.account&.locale || 'en',
+                             timezone: @submitter.account&.timezone || 'UTC',
+                             submitter: submitters_index[field['submitter_uuid']],
+                             with_signature_id: @form_configs[:with_signature_id] %>
                 <% end %>
               </div>
             </div>
