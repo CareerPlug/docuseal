@@ -64,9 +64,20 @@ class TemplatesController < ApplicationController
         associations: [schema_documents: :preview_images_attachments]
       ).call
 
-      @template = Templates::Clone.call(@base_template, author: current_user,
-                                                        name: params.dig(:template, :name),
-                                                        folder_name: params[:folder_name])
+      # Determine target for same-type cloning (clone to same ownership type as original)
+      target_args = if @base_template.account_id.present?
+                      { target_account: @base_template.account }
+                    elsif @base_template.partnership_id.present?
+                      { target_partnership: @base_template.partnership }
+                    else
+                      {}
+                    end
+
+      @template = Templates::Clone.call(@base_template,
+                                        author: current_user,
+                                        name: params.dig(:template, :name),
+                                        folder_name: params[:folder_name],
+                                        **target_args)
     else
       @template = Template.new(template_params) if @template.nil?
       @template.author = current_user
@@ -115,6 +126,19 @@ class TemplatesController < ApplicationController
   end
 
   private
+
+  def current_ability
+    @current_ability ||= Ability.new(current_user, partnership_request_context)
+  end
+
+  def partnership_request_context
+    return nil if params[:accessible_partnership_ids].blank?
+
+    {
+      accessible_partnership_ids: Array.wrap(params[:accessible_partnership_ids]),
+      external_account_id: params[:external_account_id]
+    }
+  end
 
   def template_params
     params.require(:template).permit(
