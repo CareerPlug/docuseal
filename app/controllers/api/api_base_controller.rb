@@ -98,6 +98,19 @@ module Api
       current_user&.account
     end
 
+    def current_ability
+      @current_ability ||= Ability.new(current_user, partnership_request_context)
+    end
+
+    def partnership_request_context
+      return nil if params[:accessible_partnership_ids].blank?
+
+      {
+        accessible_partnership_ids: Array.wrap(params[:accessible_partnership_ids]),
+        external_account_id: params[:external_account_id]
+      }
+    end
+
     def set_noindex_headers
       headers['X-Robots-Tag'] = 'noindex'
     end
