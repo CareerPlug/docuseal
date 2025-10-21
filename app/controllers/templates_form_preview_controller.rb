@@ -2,6 +2,7 @@
 
 class TemplatesFormPreviewController < ApplicationController
   include IframeAuthentication
+  include PartnershipContext
 
   layout 'form'
 
