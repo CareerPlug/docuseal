@@ -57,7 +57,6 @@ module Abilities
       # Handle partnership templates for account users (no API context)
       if template.partnership_id.present?
         return true if global_partnership_template?(template)
-        return true if user.access_token.present?
 
         return false
       end
@@ -71,6 +70,8 @@ module Abilities
 
       # Handle partnership templates - check if user has access to the partnership
       if template.partnership_id.present?
+        return true if global_partnership_template?(template)
+
         partnership = Partnership.find_by(id: template.partnership_id)
         return false unless partnership
 
