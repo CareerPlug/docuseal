@@ -129,7 +129,6 @@ class TemplatesController < ApplicationController
 
   private
 
-
   def template_params
     params.require(:template).permit(
       :name, :external_id,

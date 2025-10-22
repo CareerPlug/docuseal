@@ -176,9 +176,12 @@ describe 'Templates API' do
 
     context 'when cloning a template' do
       it 'preserves partnership ownership' do
+        global_partnership = create(:partnership)
+        allow(ExportLocation).to receive(:global_partnership_id).and_return(global_partnership.id)
+
         partnership_template = create(
           :template,
-          partnership: create(:partnership),
+          partnership: global_partnership,
           account: nil, author: create(:user, account: nil)
         )
 

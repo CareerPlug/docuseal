@@ -75,7 +75,7 @@ module Abilities
         partnership = Partnership.find_by(id: template.partnership_id)
         return false unless partnership
 
-        return accessible_partnership_ids.include?(partnership.external_partnership_id)
+        return accessible_partnership_ids.include?(partnership.external_partnership_id.to_i)
       end
 
       # Handle account templates - check if user has access via partnership context

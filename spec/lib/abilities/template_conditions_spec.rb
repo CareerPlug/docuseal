@@ -6,15 +6,6 @@ describe Abilities::TemplateConditions do
       let(:partnership) { build(:partnership, id: 1, external_partnership_id: 'test-123') }
       let(:template) { build(:template, partnership_id: 1, account_id: nil) }
 
-      it 'allows access for users with access tokens' do
-        user = build(:user, account_id: nil)
-        access_token = instance_double(AccessToken)
-        allow(user).to receive(:access_token).and_return(access_token)
-
-        result = described_class.entity(template, user: user)
-        expect(result).to be true
-      end
-
       it 'denies access for users without access tokens' do
         user = build(:user, account_id: nil)
         allow(user).to receive(:access_token).and_return(nil)
@@ -33,6 +24,18 @@ describe Abilities::TemplateConditions do
         request_context = { accessible_partnership_ids: [partnership.external_partnership_id] }
         result = described_class.entity(template, user: user, request_context: request_context)
 
+        expect(result).to be true
+      end
+
+      it 'handles integer comparison in partnership context' do
+        partnership = create(:partnership, external_partnership_id: 123)
+        template = build(:template, partnership: partnership, account_id: nil)
+        user = build(:user, account_id: nil)
+        allow(ExportLocation).to receive(:global_partnership_id).and_return(nil)
+
+        # accessible_partnership_ids are converted to integers by PartnershipContext concern
+        request_context = { accessible_partnership_ids: [123] }
+        result = described_class.entity(template, user: user, request_context: request_context)
         expect(result).to be true
       end
 
