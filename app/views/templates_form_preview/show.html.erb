@@ -15,7 +15,7 @@
           </select>
         </form>
       <% end %>
-      <a href="<%= edit_template_path(@template, (params[:auth_token] || session[:auth_token]) ? { auth_token: params[:auth_token] || session[:auth_token] } : {}) %>" class="base-button" data-turbo="false" style="flex-shrink: 0; padding: 0px 24px;">
+      <a href="<%= edit_template_path(@template, params[:auth_token] || session[:auth_token] ? { auth_token: params[:auth_token] || session[:auth_token] } : {}) %>" class="base-button" data-turbo="false" style="flex-shrink: 0; padding: 0px 24px;">
         <%= t('exit_preview') %>
       </a>
     </div>
