@@ -18,7 +18,7 @@ FactoryBot.define do
     end
 
     after(:create) do |template, ev|
-      party_names = ['Employee', 'Manager']
+      party_names = %w[Employee Manager]
 
       template.submitters = Array.new(ev.submitter_count) do |i|
         {
