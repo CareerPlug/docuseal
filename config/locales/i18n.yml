@@ -612,9 +612,7 @@ en: &en
   sign_in_person: Sign In-person
   create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Create a new template</a> document form or <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">submit the existing one</a>
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Send email copy with completed documents to a specified BCC address.
-  re_send_email: Re-send Email
   send_email: Send Email
-  copy_share_link: Copy Share Link
   copied_to_clipboard: Copied to Clipboard
   link: Link
   via_email: via Email
@@ -629,7 +627,6 @@ en: &en
   awaiting: Awaiting
   document_id: Document ID
   envelope_id: Envelope ID
-  event_log: Event Log
   verify: Verify
   testing_log_not_for_production_use: Testing Log - Not for Production Use
   original_sha256: Original SHA256
