@@ -66,23 +66,24 @@ RSpec.describe DocumentSecurityService do
       it 'includes Content-Disposition header in the URL' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
         expected_url_pattern = %r{
           #{Regexp.escape(cloudfront_url)}/docuseal/.*
           \?response-content-disposition=.*filename%3D%22test-document\.pdf%22.*
           &response-content-type=application%2Fpdf
         }x
 
-        expect(signer).to receive(:signed_url) do |url, **_options|
-          expect(url).to match(expected_url_pattern)
-          'https://signed-url.example.com'
-        end
-
         described_class.signed_url_for(attachment)
+
+        expect(signer).to have_received(:signed_url) do |url, **_options|
+          expect(url).to match(expected_url_pattern)
+        end
       end
 
       it 'properly escapes special characters in filename' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
 
         special_blob = ActiveStorage::Blob.create_and_upload!(
           io: StringIO.new('test'),
@@ -95,18 +96,18 @@ RSpec.describe DocumentSecurityService do
           record: account
         )
 
-        expect(signer).to receive(:signed_url) do |url, **_options|
+        described_class.signed_url_for(special_attachment)
+
+        expect(signer).to have_received(:signed_url) do |url, **_options|
           expect(url).to include('response-content-disposition=')
           expect(url).to include(CGI.escape('document with spaces & special.pdf'))
-          'https://signed-url.example.com'
         end
-
-        described_class.signed_url_for(special_attachment)
       end
 
       it 'uses default filename when blob filename is empty' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
 
         empty_blob = ActiveStorage::Blob.create_and_upload!(
           io: StringIO.new('test'),
@@ -119,65 +120,64 @@ RSpec.describe DocumentSecurityService do
           record: account
         )
 
-        expect(signer).to receive(:signed_url) do |url, **_options|
+        described_class.signed_url_for(empty_attachment)
+
+        expect(signer).to have_received(:signed_url) do |url, **_options|
           decoded_url = CGI.unescape(url)
           expect(decoded_url).to include('filename="download.pdf"')
-          'https://signed-url.example.com'
         end
-
-        described_class.signed_url_for(empty_attachment)
       end
 
       it 'adds docuseal prefix to S3 key if not present' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
-
-        expect(signer).to receive(:signed_url) do |url, **_options|
-          expect(url).to include('/docuseal/')
-          'https://signed-url.example.com'
-        end
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
 
         described_class.signed_url_for(attachment)
+
+        expect(signer).to have_received(:signed_url) do |url, **_options|
+          expect(url).to include('/docuseal/')
+        end
       end
 
       it 'does not duplicate docuseal prefix if already present' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
         allow(blob).to receive(:key).and_return('docuseal/existing-key')
 
-        expect(signer).to receive(:signed_url) do |url, **_options|
+        described_class.signed_url_for(attachment)
+
+        expect(signer).to have_received(:signed_url) do |url, **_options|
           expect(url).to match(%r{/docuseal/[^/]})
           expect(url).not_to match(%r{/docuseal/docuseal/})
-          'https://signed-url.example.com'
         end
-
-        described_class.signed_url_for(attachment)
       end
 
       it 'respects the expires_in parameter' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
         expires_time = 2.hours.from_now
 
-        expect(signer).to receive(:signed_url) do |_url, **options|
-          expect(options[:expires]).to be_within(1).of(expires_time.to_i)
-          'https://signed-url.example.com'
-        end
-
         described_class.signed_url_for(attachment, expires_in: 2.hours)
+
+        expect(signer).to have_received(:signed_url) do |_url, **options|
+          expect(options[:expires]).to be_within(1).of(expires_time.to_i)
+        end
       end
 
       it 'uses inline disposition in Content-Disposition header' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
-
-        expect(signer).to receive(:signed_url) do |url, **_options|
-          decoded_url = CGI.unescape(url)
-          expect(decoded_url).to include('inline; filename="test-document.pdf"')
-          'https://signed-url.example.com'
-        end
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
 
         described_class.signed_url_for(attachment)
+
+        expect(signer).to have_received(:signed_url) do |url, **_options|
+          decoded_url = CGI.unescape(url)
+          expect(decoded_url).to include('inline; filename="test-document.pdf"')
+        end
       end
 
       context 'when signing fails' do
@@ -185,9 +185,11 @@ RSpec.describe DocumentSecurityService do
           signer = instance_double(Aws::CloudFront::UrlSigner)
           allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
           allow(signer).to receive(:signed_url).and_raise(StandardError.new('Signing failed'))
+          allow(Rails.logger).to receive(:error)
 
-          expect(Rails.logger).to receive(:error).with(/Failed to generate signed URL: Signing failed/)
           described_class.signed_url_for(attachment)
+
+          expect(Rails.logger).to have_received(:error).with(/Failed to generate signed URL: Signing failed/)
         end
 
         it 'falls back to the regular attachment URL' do
@@ -221,6 +223,7 @@ RSpec.describe DocumentSecurityService do
       it 'includes the correct content type for images' do
         signer = instance_double(Aws::CloudFront::UrlSigner)
         allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+        allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
         image_blob = ActiveStorage::Blob.create_and_upload!(
           io: StringIO.new('fake image'),
           filename: 'image.jpg',
@@ -232,12 +235,11 @@ RSpec.describe DocumentSecurityService do
           record: account
         )
 
-        expect(signer).to receive(:signed_url) do |url, **_options|
-          expect(url).to include('response-content-type=image%2Fjpeg')
-          'https://signed-url.example.com'
-        end
-
         described_class.signed_url_for(image_attachment)
+
+        expect(signer).to have_received(:signed_url) do |url, **_options|
+          expect(url).to include('response-content-type=image%2Fjpeg')
+        end
       end
     end
   end
