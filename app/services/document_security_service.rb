@@ -45,7 +45,17 @@ class DocumentSecurityService
       s3_key = attachment.blob.key
       # Ensure DocuSeal prefix for document organization
       prefixed_key = s3_key.start_with?('docuseal/') ? s3_key : "docuseal/#{s3_key}"
-      "#{cloudfront_base_url}/#{prefixed_key}"
+
+      # Build base URL
+      base_url = "#{cloudfront_base_url}/#{prefixed_key}"
+
+      # Add Content-Disposition header to set the download filename
+      # This must be added before signing the URL
+      filename = attachment.blob.filename.to_s
+      disposition = "inline; filename=\"#{filename}\"; filename*=UTF-8''#{CGI.escape(filename)}"
+
+      # Add query parameters for response headers
+      "#{base_url}?response-content-disposition=#{CGI.escape(disposition)}&response-content-type=#{CGI.escape(attachment.blob.content_type)}"
     end
 
     def cloudfront_base_url
