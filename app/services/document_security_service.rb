@@ -41,24 +41,30 @@ class DocumentSecurityService
     end
 
     def build_cloudfront_url(attachment)
-      # Convert S3 URL to CloudFront URL with DocuSeal prefix
-      s3_key = attachment.blob.key
-      # Ensure DocuSeal prefix for document organization
-      prefixed_key = s3_key.start_with?('docuseal/') ? s3_key : "docuseal/#{s3_key}"
+      key = ensure_docuseal_prefix(attachment.blob.key)
+      base_url = "#{cloudfront_base_url}/#{key}"
+      query_string = build_query_params(attachment)
 
-      # Build base URL
-      base_url = "#{cloudfront_base_url}/#{prefixed_key}"
+      "#{base_url}?#{query_string}"
+    end
 
-      # Add Content-Disposition header to set the download filename
-      # This must be added before signing the URL
+    def ensure_docuseal_prefix(s3_key)
+      s3_key.start_with?('docuseal/') ? s3_key : "docuseal/#{s3_key}"
+    end
+
+    def build_query_params(attachment)
       filename = attachment.blob.filename.to_s.presence || 'download.pdf'
-      disposition = "inline; filename=\"#{filename}\"; filename*=UTF-8''#{CGI.escape(filename)}"
 
-      # Add query parameters for response headers
-      escaped_disposition = CGI.escape(disposition)
-      escaped_content_type = CGI.escape(attachment.blob.content_type)
-      "#{base_url}?response-content-disposition=#{escaped_disposition}" \
-        "&response-content-type=#{escaped_content_type}"
+      {
+        'response-content-disposition' => content_disposition_for(filename),
+        'response-content-type' => attachment.blob.content_type
+      }.to_query
+    end
+
+    def content_disposition_for(filename)
+      # RFC 6266 with RFC 5987 encoding for international characters
+      rfc5987_encoded = CGI.escape(filename)
+      "inline; filename=\"#{filename}\"; filename*=UTF-8''#{rfc5987_encoded}"
     end
 
     def cloudfront_base_url
