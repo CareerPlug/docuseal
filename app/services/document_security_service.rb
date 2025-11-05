@@ -55,7 +55,10 @@ class DocumentSecurityService
       disposition = "inline; filename=\"#{filename}\"; filename*=UTF-8''#{CGI.escape(filename)}"
 
       # Add query parameters for response headers
-      "#{base_url}?response-content-disposition=#{CGI.escape(disposition)}&response-content-type=#{CGI.escape(attachment.blob.content_type)}"
+      escaped_disposition = CGI.escape(disposition)
+      escaped_content_type = CGI.escape(attachment.blob.content_type)
+      "#{base_url}?response-content-disposition=#{escaped_disposition}" \
+        "&response-content-type=#{escaped_content_type}"
     end
 
     def cloudfront_base_url
