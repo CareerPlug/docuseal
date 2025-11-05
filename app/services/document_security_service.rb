@@ -51,7 +51,7 @@ class DocumentSecurityService
 
       # Add Content-Disposition header to set the download filename
       # This must be added before signing the URL
-      filename = attachment.blob.filename.to_s
+      filename = attachment.blob.filename.to_s.presence || 'download.pdf'
       disposition = "inline; filename=\"#{filename}\"; filename*=UTF-8''#{CGI.escape(filename)}"
 
       # Add query parameters for response headers
