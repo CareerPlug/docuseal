@@ -102,6 +102,10 @@ class Submission < ApplicationRecord
     expire_at && expire_at <= Time.current
   end
 
+  def last_completed_submitter
+    submitters.where.not(completed_at: nil).order(:completed_at).last
+  end
+
   def schema_documents
     if template_id?
       template_schema_documents
