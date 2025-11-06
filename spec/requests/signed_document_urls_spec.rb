@@ -52,12 +52,13 @@ describe 'Signed Document URLs API' do
       end
 
       it 'calls EnsureResultGenerated to generate documents if needed' do
-        expect(Submissions::EnsureResultGenerated).to receive(:call).with(completed_submitter)
+        allow(Submissions::EnsureResultGenerated).to receive(:call).and_return(completed_submitter.documents)
 
         get "/api/submissions/#{submission.id}/signed_document_url",
             headers: { 'x-auth-token': author.access_token.token }
 
         expect(response).to have_http_status(:ok)
+        expect(Submissions::EnsureResultGenerated).to have_received(:call).with(completed_submitter)
       end
 
       it 'uses standard ActiveStorage URLs for disk storage' do
@@ -115,7 +116,11 @@ describe 'Signed Document URLs API' do
       end
 
       after do
+        # Clear all memoized CloudFront configuration
         DocumentSecurityService.instance_variable_set(:@cloudfront_signer, nil)
+        DocumentSecurityService.instance_variable_set(:@cloudfront_base_url, nil)
+        DocumentSecurityService.instance_variable_set(:@cloudfront_key_pair_id, nil)
+        DocumentSecurityService.instance_variable_set(:@cloudfront_private_key, nil)
       end
 
       it 'uses DocumentSecurityService for secured storage' do
@@ -151,12 +156,13 @@ describe 'Signed Document URLs API' do
       end
 
       it 'does not call EnsureResultGenerated for incomplete submissions' do
-        expect(Submissions::EnsureResultGenerated).not_to receive(:call)
+        allow(Submissions::EnsureResultGenerated).to receive(:call)
 
         get "/api/submissions/#{submission.id}/signed_document_url",
             headers: { 'x-auth-token': author.access_token.token }
 
         expect(response).to have_http_status(:unprocessable_entity)
+        expect(Submissions::EnsureResultGenerated).not_to have_received(:call)
       end
     end
 
@@ -225,7 +231,7 @@ describe 'Signed Document URLs API' do
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['documents'].size).to eq(2)
-        expect(response.parsed_body['documents'].map { |d| d['name'] }).to contain_exactly(
+        expect(response.parsed_body['documents'].pluck('name')).to contain_exactly(
           'document-1.pdf',
           'document-2.pdf'
         )
@@ -254,8 +260,12 @@ describe 'Signed Document URLs API' do
       end
 
       it 'returns error when using production API token for testing submission' do
-        testing_submission = create(:submission, :with_submitters, template: testing_template,
-                                                                    created_by_user: testing_author)
+        testing_submission = create(
+          :submission,
+          :with_submitters,
+          template: testing_template,
+          created_by_user: testing_author
+        )
         testing_submission.submitters.first.update!(completed_at: Time.current)
         blob = ActiveStorage::Blob.create_and_upload!(
           io: StringIO.new('test'),

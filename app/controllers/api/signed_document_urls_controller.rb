@@ -11,8 +11,10 @@ module Api
                                   .order(:completed_at)
                                   .last
 
-      return render json: { error: 'Submission not completed' },
-                    status: :unprocessable_entity if last_submitter.blank?
+      if last_submitter.blank?
+        return render json: { error: 'Submission not completed' },
+                      status: :unprocessable_entity
+      end
 
       # Ensure documents are generated
       Submissions::EnsureResultGenerated.call(last_submitter)
