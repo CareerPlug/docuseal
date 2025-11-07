@@ -122,8 +122,9 @@ class Submitter < ApplicationRecord
   def current_documents
     return documents if document_generation_events.complete.none?
 
-    last_event = document_generation_events.complete.order(:created_at).last
-    documents.where('active_storage_attachments.created_at >= ?', last_event.created_at)
+    # Use completed_at as the marker since documents are generated after completion
+    # This handles re-completion: only returns documents from the latest completion
+    documents.where('active_storage_attachments.created_at >= ?', completed_at)
   end
 
   private

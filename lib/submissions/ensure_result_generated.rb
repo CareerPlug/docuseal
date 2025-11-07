@@ -84,9 +84,9 @@ module Submissions
     end
 
     def latest_documents_for_event(submitter, event)
-      # Return documents created during or after the last complete event
-      # This ensures we get the most recent generation, not old ones
-      submitter.documents.where('active_storage_attachments.created_at >= ?', event.created_at)
+      # Return documents created after the current completion timestamp
+      # This ensures we get the most recent generation, not old ones from previous completions
+      submitter.documents.where('active_storage_attachments.created_at >= ?', submitter.completed_at)
     end
   end
 end
