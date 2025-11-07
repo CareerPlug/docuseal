@@ -58,11 +58,34 @@ RSpec.describe User do
       expect(user).not_to be_valid
     end
 
-    it 'validates uniqueness of external_user_id when present' do
+    it 'validates uniqueness of external_user_id scoped to account' do
       account = create(:account)
       create(:user, account: account, external_user_id: 123)
       duplicate = build(:user, account: account, external_user_id: 123)
       expect(duplicate).not_to be_valid
+    end
+
+    it 'allows same external_user_id across different accounts' do
+      account1 = create(:account)
+      account2 = create(:account)
+      create(:user, account: account1, external_user_id: 123)
+      user_in_different_account = build(:user, account: account2, external_user_id: 123)
+      expect(user_in_different_account).to be_valid
+    end
+
+    it 'validates uniqueness of email scoped to account' do
+      account = create(:account)
+      create(:user, account: account, email: 'user@example.com')
+      duplicate = build(:user, account: account, email: 'user@example.com')
+      expect(duplicate).not_to be_valid
+    end
+
+    it 'allows same email across different accounts' do
+      account1 = create(:account)
+      account2 = create(:account)
+      create(:user, account: account1, email: 'user@example.com')
+      user_in_different_account = build(:user, account: account2, email: 'user@example.com')
+      expect(user_in_different_account).to be_valid
     end
   end
 

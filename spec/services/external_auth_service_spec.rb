@@ -39,6 +39,21 @@ RSpec.describe ExternalAuthService do
 
         expect(token).to eq(user.access_token.token)
       end
+
+      it 'finds correct user when same external_user_id exists in different accounts' do
+        # Create two accounts with users having the same external_user_id
+        account1 = create(:account, external_account_id: 456)
+        user1 = create(:user, account: account1, external_user_id: 123, email: 'user1@example.com')
+
+        account2 = create(:account, external_account_id: 789)
+        create(:user, account: account2, external_user_id: 123, email: 'user2@example.com')
+
+        # Authenticate for account1 - should find user1, not user2
+        token = described_class.new(params).authenticate_user
+
+        expect(token).to eq(user1.access_token.token)
+        expect(User.count).to eq(2) # Should not create a new user
+      end
     end
 
     context 'with partnership params' do
@@ -90,14 +105,17 @@ RSpec.describe ExternalAuthService do
         expect(User.last.account_id).to eq(account.id)
       end
 
-      it 'finds existing partnership user with account context' do
-        create(:account, external_account_id: 456)
-        user = create(:user, account: nil, external_user_id: 123)
+      it 'creates new user when partnership user exists but account context differs' do
+        account = create(:account, external_account_id: 456)
+        partnership_user = create(:user, account: nil, external_user_id: 123)
 
         token = described_class.new(params).authenticate_user
 
-        expect(token).to eq(user.access_token.token)
-        expect(User.count).to eq(1)
+        # Should create a new user for the account context (account scoping)
+        expect(token).not_to eq(partnership_user.access_token.token)
+        expect(User.count).to eq(2)
+        expect(User.last.account_id).to eq(account.id)
+        expect(User.last.external_user_id).to eq(123)
       end
 
       it 'handles external_account_id for account-level operations' do
