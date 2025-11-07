@@ -53,9 +53,9 @@ RSpec.describe 'Profile Settings' do
       expect(page).to have_content('Password has been changed')
     end
 
-    # Skipped: Password confirmation validation removed with Devise :validatable module
-    # System uses token-based authentication, not password-based login
-    xit 'does not update if password confirmation does not match' do
+    it 'does not update if password confirmation does not match' do
+      skip 'Password confirmation validation removed with Devise :validatable module'
+
       fill_in 'New password', with: 'newpassword'
       fill_in 'Confirm new password', with: 'newpassword1'
 
