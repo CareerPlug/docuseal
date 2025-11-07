@@ -16,7 +16,7 @@ RSpec.describe TokenRefreshService do
     end
 
     context 'when user exists' do
-      let!(:user) { create(:user, external_user_id: 123) }
+      let!(:user) { create(:user, account: nil, external_user_id: 123) }
 
       it 'destroys existing token and creates new one' do
         original_token = user.access_token.token
@@ -44,6 +44,32 @@ RSpec.describe TokenRefreshService do
 
         expect(new_token).to be_present
         expect(user.reload.access_token).to be_present
+      end
+    end
+
+    context 'when user exists with account scoping' do
+      let!(:account) { create(:account, external_account_id: 456) }
+      let!(:user) { create(:user, account: account, external_user_id: 123) }
+      let(:params_with_account) do
+        user_params.merge(
+          account: {
+            external_id: 456
+          }
+        )
+      end
+
+      it 'refreshes token for correct account-scoped user' do
+        # Create another user with same external_user_id but different account
+        other_account = create(:account, external_account_id: 789)
+        create(:user, account: other_account, external_user_id: 123)
+
+        original_token = user.access_token.token
+
+        new_token = described_class.new(params_with_account).refresh_token
+
+        expect(new_token).to be_present
+        expect(new_token).not_to eq(original_token)
+        expect(user.reload.access_token.token).to eq(new_token)
       end
     end
 

@@ -72,8 +72,8 @@ RSpec.describe 'Team Settings' do
       expect(page).to have_content('Email already exists')
     end
 
-    it "doesn't create a new user if a user belongs to another account" do
-      user = create(:user, account: second_account)
+    it 'allows creating a user with an email that exists in another account' do
+      user = create(:user, account: second_account, email: 'same@example.com')
       visit settings_users_path
 
       click_link 'New User'
@@ -86,10 +86,13 @@ RSpec.describe 'Team Settings' do
 
         expect do
           click_button 'Submit'
-        end.not_to change(User, :count)
-
-        expect(page).to have_content('Email has already been taken')
+        end.to change(User, :count).by(1)
       end
+
+      # Verify the new user was created in the current account
+      new_user = User.find_by(email: 'same@example.com', account: account)
+      expect(new_user).to be_present
+      expect(new_user.id).not_to eq(user.id)
     end
 
     it 'does not allow to create a new user with an invalid email' do
