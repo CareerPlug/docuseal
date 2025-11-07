@@ -124,7 +124,7 @@ class Submitter < ApplicationRecord
 
     # Use completed_at as the marker since documents are generated after completion
     # This handles re-completion: only returns documents from the latest completion
-    documents.where('active_storage_attachments.created_at >= ?', completed_at)
+    documents.where(active_storage_attachments: { created_at: completed_at.. })
   end
 
   private

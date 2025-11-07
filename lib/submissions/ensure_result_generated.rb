@@ -23,7 +23,7 @@ module Submissions
       # Only return existing docs if they were generated AFTER the current completion
       # This handles re-completion after change requests by comparing timestamps
       if last_complete_event && last_complete_event.created_at >= submitter.completed_at
-        return latest_documents_for_event(submitter, last_complete_event)
+        return latest_documents_for_event(submitter)
       end
 
       events =
@@ -36,22 +36,12 @@ module Submissions
       # Check if last event is start/retry AND was created after current completion
       # This means generation is actually in progress for THIS completion
       is_generation_in_progress = last_event&.event_name&.in?(%w[start retry]) &&
-                                   last_event.created_at >= submitter.completed_at
+                                  last_event.created_at >= submitter.completed_at
 
       if is_generation_in_progress
         wait_for_complete_or_fail(submitter)
       else
-        submitter.document_generation_events.create!(event_name: events.present? ? :retry : :start)
-
-        documents = GenerateResultAttachments.call(submitter)
-
-        # Only create "complete" event if one doesn't exist for this completion
-        # Check if there's a complete event created AFTER this completion
-        unless submitter.document_generation_events.complete.where('created_at >= ?', submitter.completed_at).exists?
-          submitter.document_generation_events.create!(event_name: :complete)
-        end
-
-        documents
+        generate_and_record_documents(submitter, events)
       end
     rescue ActiveRecord::RecordNotUnique
       sleep WAIT_FOR_RETRY
@@ -83,10 +73,24 @@ module Submissions
       end
     end
 
-    def latest_documents_for_event(submitter, event)
+    def latest_documents_for_event(submitter)
       # Return documents created after the current completion timestamp
       # This ensures we get the most recent generation, not old ones from previous completions
-      submitter.documents.where('active_storage_attachments.created_at >= ?', submitter.completed_at)
+      submitter.documents.where(active_storage_attachments: { created_at: submitter.completed_at.. })
+    end
+
+    def generate_and_record_documents(submitter, events)
+      submitter.document_generation_events.create!(event_name: events.present? ? :retry : :start)
+
+      documents = GenerateResultAttachments.call(submitter)
+
+      # Only create "complete" event if one doesn't exist for this completion
+      # Check if there's a complete event created AFTER this completion
+      unless submitter.document_generation_events.complete.exists?(created_at: submitter.completed_at..)
+        submitter.document_generation_events.create!(event_name: :complete)
+      end
+
+      documents
     end
   end
 end
