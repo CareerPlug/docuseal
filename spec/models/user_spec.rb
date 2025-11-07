@@ -33,12 +33,12 @@
 #
 # Indexes
 #
-#  index_users_on_account_id            (account_id)
-#  index_users_on_email                 (email) UNIQUE
-#  index_users_on_external_user_id      (external_user_id) UNIQUE
-#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
-#  index_users_on_unlock_token          (unlock_token) UNIQUE
-#  index_users_on_uuid                  (uuid) UNIQUE
+#  index_users_on_account_id                       (account_id)
+#  index_users_on_account_id_and_email             (account_id,email) UNIQUE
+#  index_users_on_account_id_and_external_user_id  (account_id,external_user_id) UNIQUE
+#  index_users_on_reset_password_token             (reset_password_token) UNIQUE
+#  index_users_on_unlock_token                     (unlock_token) UNIQUE
+#  index_users_on_uuid                             (uuid) UNIQUE
 #
 # Foreign Keys
 #

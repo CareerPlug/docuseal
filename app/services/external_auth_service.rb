@@ -74,11 +74,17 @@ class ExternalAuthService
 
   def find_or_create_user_by_external_id(account: nil)
     external_user_id = @params[:user][:external_id]&.to_i
-    user = User.find_by(external_user_id: external_user_id)
+
+    # Find by external_user_id scoped to account
+    user = if account.present?
+             User.find_by(account_id: account.id, external_user_id: external_user_id)
+           else
+             User.find_by(account_id: nil, external_user_id: external_user_id)
+           end
 
     if user.present?
-      # If user exists and we have an account context, assign them to the account if they don't have one
-      user.update!(account: account) if account.present? && user.account_id.blank?
+      # Update user attributes if they've changed
+      user.update!(user_attributes) if user_attributes_changed?(user)
       return user
     end
 
@@ -91,6 +97,12 @@ class ExternalAuthService
     create_attributes[:account] = account if account.present?
 
     User.create!(create_attributes)
+  end
+
+  def user_attributes_changed?(user)
+    user.email != @params[:user][:email] ||
+      user.first_name != @params[:user][:first_name] ||
+      user.last_name != @params[:user][:last_name]
   end
 
   def user_attributes

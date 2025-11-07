@@ -33,12 +33,12 @@
 #
 # Indexes
 #
-#  index_users_on_account_id            (account_id)
-#  index_users_on_email                 (email) UNIQUE
-#  index_users_on_external_user_id      (external_user_id) UNIQUE
-#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
-#  index_users_on_unlock_token          (unlock_token) UNIQUE
-#  index_users_on_uuid                  (uuid) UNIQUE
+#  index_users_on_account_id                       (account_id)
+#  index_users_on_account_id_and_email             (account_id,email) UNIQUE
+#  index_users_on_account_id_and_external_user_id  (account_id,external_user_id) UNIQUE
+#  index_users_on_reset_password_token             (reset_password_token) UNIQUE
+#  index_users_on_unlock_token                     (unlock_token) UNIQUE
+#  index_users_on_uuid                             (uuid) UNIQUE
 #
 # Foreign Keys
 #
@@ -67,7 +67,8 @@ class User < ApplicationRecord
   has_many :encrypted_configs, dependent: :destroy, class_name: 'EncryptedUserConfig'
   has_many :email_messages, dependent: :destroy, foreign_key: :author_id, inverse_of: :author
 
-  devise :two_factor_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable
+  # Removed :validatable to avoid Devise's global email uniqueness constraint
+  devise :two_factor_authenticatable, :recoverable, :rememberable, :trackable, :lockable
 
   attribute :role, :string, default: ADMIN_ROLE
   attribute :uuid, :string, default: -> { SecureRandom.uuid }
@@ -76,8 +77,11 @@ class User < ApplicationRecord
   scope :archived, -> { where.not(archived_at: nil) }
   scope :admins, -> { where(role: ADMIN_ROLE) }
 
-  validates :email, format: { with: /\A[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\z/ }
-  validates :external_user_id, uniqueness: true, allow_nil: true
+  # Custom email validation scoped to account (instead of Devise's global uniqueness)
+  validates :email, presence: true,
+                    format: { with: /\A[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\z/ },
+                    uniqueness: { scope: :account_id }
+  validates :external_user_id, uniqueness: { scope: :account_id }, allow_nil: true
 
   def self.find_or_create_by_external_id(account, external_id, attributes = {})
     account.users.find_by(external_user_id: external_id) ||
