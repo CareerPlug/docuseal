@@ -5,8 +5,7 @@
       <h3 class="text-lg font-bold mb-4">Request Changes</h3>
 
       <p class="mb-4">
-        Request changes from <strong><%= @submitter.name || @submitter.email %></strong> for this submission.
-        They will receive an email with your message and be able to resubmit the form.
+        Request changes from <strong><%= @submitter.name || @submitter.email %></strong> for this form.
       </p>
 
       <%= form_for '', url: request_changes_submitter_path(@submitter.slug), method: :post do |f| %>
@@ -25,7 +24,7 @@
         <div class="modal-action">
           <label class="btn btn-ghost" onclick="document.getElementById('modal').innerHTML = ''">Cancel</label>
           <toggle-submit dir="auto">
-            <%= f.button 'Request Changes', class: 'btn btn-warning' %>
+            <%= f.button 'Submit', class: 'btn btn-warning' %>
           </toggle-submit>
         </div>
       <% end %>
