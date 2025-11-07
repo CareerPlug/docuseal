@@ -26,7 +26,9 @@ class TokenRefreshService
     # Get account context if provided
     account = find_account_from_params
 
-    # Find user scoped to account
+    # Find user scoped to account context
+    # Partnership users (account_id: nil) and account users are treated as separate entities
+    # even if they share the same external_user_id
     user = if account.present?
              User.find_by(account_id: account.id, external_user_id: external_user_id)
            else

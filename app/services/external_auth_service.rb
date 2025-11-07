@@ -75,7 +75,10 @@ class ExternalAuthService
   def find_or_create_user_by_external_id(account: nil)
     external_user_id = @params[:user][:external_id]&.to_i
 
-    # Find by external_user_id scoped to account
+    # Find user scoped to account context
+    # Partnership users (account_id: nil) and account users are treated as separate entities
+    # even if they share the same external_user_id. This allows the same external user to
+    # exist in multiple contexts without conflicts.
     user = if account.present?
              User.find_by(account_id: account.id, external_user_id: external_user_id)
            else
