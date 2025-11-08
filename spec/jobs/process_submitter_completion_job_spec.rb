@@ -148,6 +148,27 @@ RSpec.describe ProcessSubmitterCompletionJob do
           expect(Submissions::GenerateAuditTrail).to have_received(:call).with(submission)
         end
       end
+
+      context 'when checking audit trail created_at (integration test)' do
+        it 'can access created_at on ActiveStorage::Attachment record' do
+          # This test verifies that we're using ActiveStorage::Attachment.find_by
+          # instead of submission.audit_trail (which is a proxy and doesn't have created_at)
+          audit_trail_blob = ActiveStorage::Blob.create_and_upload!(
+            io: StringIO.new('audit trail'),
+            filename: 'audit_trail.pdf'
+          )
+          submission.audit_trail.attach(audit_trail_blob)
+
+          attachment = ActiveStorage::Attachment.find_by(
+            record: submission,
+            name: 'audit_trail'
+          )
+
+          expect(attachment).to be_present
+          expect(attachment.created_at).to be_a(Time)
+          expect { attachment.created_at < Time.current }.not_to raise_error
+        end
+      end
     end
 
     context 'when not all submitters are completed' do
