@@ -119,6 +119,14 @@ class Submitter < ApplicationRecord
     end
   end
 
+  def current_documents
+    return documents if document_generation_events.complete.none?
+
+    # Use completed_at as the marker since documents are generated after completion
+    # This handles re-completion: only returns documents from the latest completion
+    documents.where(active_storage_attachments: { created_at: completed_at.. })
+  end
+
   private
 
   def anonymize_email_events

@@ -17,20 +17,6 @@
           <span class="hidden md:inline"><%= t('audit_log') %></span>
         </a>
       <% end %>
-      <% if last_submitter %>
-        <% if is_all_completed || !is_combined_enabled %>
-          <download-button data-src="<%= submitter_download_index_path(last_submitter.slug, { sig: params[:sig], combined: is_combined_enabled }.compact) %>" class="base-button">
-            <span class="flex items-center justify-center space-x-2" data-target="download-button.defaultButton">
-              <%= svg_icon('download', class: 'w-6 h-6') %>
-              <span class="hidden md:inline"><%= t('download') %></span>
-            </span>
-            <span class="flex items-center justify-center space-x-2 hidden" data-target="download-button.loadingButton">
-              <%= svg_icon('loader', class: 'w-6 h-6 animate-spin') %>
-              <span class="hidden md:inline"><%= t('downloading') %></span>
-            </span>
-          </download-button>
-        <% end %>
-      <% end %>
     </div>
   </div>
   <div class="flex md:max-h-[calc(100vh-60px)]">

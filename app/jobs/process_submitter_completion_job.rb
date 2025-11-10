@@ -17,7 +17,7 @@ class ProcessSubmitterCompletionJob
         Submissions::GenerateCombinedAttachment.call(submitter)
       end
 
-      Submissions::GenerateAuditTrail.call(submitter.submission)
+      maybe_regenerate_audit_trail(submitter)
 
       enqueue_completed_emails(submitter)
     end
@@ -152,5 +152,35 @@ class ProcessSubmitterCompletionJob
     next_submitter = submitter.submission.submitters.find { |s| s.uuid == next_submitter_item['uuid'] }
 
     Submitters.send_signature_requests([next_submitter])
+  end
+
+  def maybe_regenerate_audit_trail(submitter)
+    # Regenerate audit trail if it doesn't exist or was created before latest completion
+    # This handles re-completion after change requests
+    latest_completion = submitter.submission.submitters.maximum(:completed_at)
+    existing_audit_trail = ActiveStorage::Attachment.find_by(
+      record: submitter.submission,
+      name: 'audit_trail'
+    )
+
+    should_regenerate = existing_audit_trail.blank? ||
+                        existing_audit_trail.created_at < latest_completion
+
+    return unless should_regenerate
+
+    # Generate new audit trail first (safer - keeps old one if generation fails)
+    Submissions::GenerateAuditTrail.call(submitter.submission)
+
+    # Clean up old audit trail attachments, keeping only the newest
+    # This handles multiple PDFs created during re-completion after change requests
+    audit_trail_attachments = ActiveStorage::Attachment.where(
+      record: submitter.submission,
+      name: 'audit_trail'
+    ).order(created_at: :asc)
+
+    # Keep only the newest, purge the rest
+    return unless audit_trail_attachments.count > 1
+
+    audit_trail_attachments.limit(audit_trail_attachments.count - 1).each(&:purge)
   end
 end

@@ -98,7 +98,12 @@ module Submitters
     original_documents = submitter.submission.schema_documents.preload(:blob)
     is_more_than_two_images = original_documents.count(&:image?) > 1
 
-    submitter.documents.preload(:blob).reject do |attachment|
+    # Use current_documents to get only the latest generation after re-completion
+    docs = submitter.current_documents
+    # Handle both ActiveStorage::Attached::Many and ActiveRecord::Relation
+    docs = docs.preload(:blob) if docs.respond_to?(:preload)
+
+    docs.reject do |attachment|
       is_more_than_two_images &&
         original_documents.find { |a| a.uuid == (attachment.metadata['original_uuid'] || attachment.uuid) }&.image?
     end
