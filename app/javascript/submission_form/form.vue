@@ -93,9 +93,8 @@
   <div
     v-show="isFormVisible"
     id="form_container"
-    class="shadow-md bg-base-100 absolute bottom-0 w-full border-base-200 border p-4 rounded form-container overflow-hidden"
-    :class="{ 'md:bottom-4': isBreakpointMd }"
-    :style="{ backgroundColor: backgroundColor }"
+    :class="formContainerClasses"
+    :style="formContainerStyle"
   >
     <button
       v-if="!isCompleted"
@@ -113,6 +112,36 @@
     <div
       :class="{ 'md:px-4': isBreakpointMd }"
     >
+      <div
+        v-if="showMobileFieldLabel"
+        class="w-full max-w-xl mx-auto text-center mb-4 mt-2"
+      >
+        <div
+          class="text-xl font-semibold text-base-content"
+          dir="auto"
+        >
+          <MarkdownContent
+            v-if="currentField?.title"
+            :string="currentField.title"
+          />
+          <template v-else>
+            {{ currentFieldLabelText }}
+          </template>
+          <span
+            v-if="isCurrentFieldOptional"
+            class="font-normal text-base-content/70"
+          >
+            ({{ t('optional') }})
+          </span>
+        </div>
+        <div
+          v-if="currentField?.description"
+          class="mt-2 text-base text-base-content/80"
+          dir="auto"
+        >
+          <MarkdownContent :string="currentField.description" />
+        </div>
+      </div>
       <form
         v-if="!isCompleted && !isInvite"
         id="steps_form"
@@ -138,7 +167,7 @@
             <TextStep
               :key="currentField.uuid"
               v-model="values[currentField.uuid]"
-              :show-field-names="showFieldNames"
+              :show-field-names="shouldShowStepFieldNames"
               :field="currentField"
               @focus="scrollIntoField(currentField)"
             />
@@ -147,7 +176,7 @@
             v-else-if="currentField.type === 'number'"
             :key="currentField.uuid"
             v-model="values[currentField.uuid]"
-            :show-field-names="showFieldNames"
+            :show-field-names="shouldShowStepFieldNames"
             :field="currentField"
             @focus="scrollIntoField(currentField)"
           />
@@ -155,7 +184,7 @@
             v-else-if="currentField.type === 'date'"
             :key="currentField.uuid"
             v-model="values[currentField.uuid]"
-            :show-field-names="showFieldNames"
+            :show-field-names="shouldShowStepFieldNames"
             :field="currentField"
             @submit="!isSubmitting && submitStep()"
             @focus="scrollIntoField(currentField)"
@@ -294,7 +323,7 @@
             v-else-if="currentField.type === 'multiple'"
             :key="currentField.uuid"
             v-model="values[currentField.uuid]"
-            :show-field-names="showFieldNames"
+            :show-field-names="shouldShowStepFieldNames"
             :is-last-step="stepFields.length === currentStep + 1"
             :field="currentField"
           />
@@ -381,7 +410,7 @@
             :dry-run="dryRun"
             :attachments-index="attachmentsIndex"
             :submitter-slug="submitterSlug"
-            :show-field-names="showFieldNames"
+            :show-field-names="shouldShowStepFieldNames"
             @attached="[attachments.push($event), scrollIntoField(currentField)]"
           />
           <SignatureStep
@@ -401,7 +430,7 @@
             :with-disclosure="withDisclosure"
             :with-qr-button="withQrButton"
             :submitter="submitter"
-            :show-field-names="showFieldNames"
+            :show-field-names="shouldShowStepFieldNames"
             @update:reason="values[currentField.preferences?.reason_field_uuid] = $event"
             @attached="attachments.push($event)"
             @start="scrollIntoField(currentField)"
@@ -416,7 +445,7 @@
             :dry-run="dryRun"
             :previous-value="previousInitialsValue"
             :attachments-index="attachmentsIndex"
-            :show-field-names="showFieldNames"
+            :show-field-names="shouldShowStepFieldNames"
             :submitter-slug="submitterSlug"
             @attached="attachments.push($event)"
             @start="scrollIntoField(currentField)"
@@ -440,7 +469,7 @@
             v-model="values[currentField.uuid]"
             :field="currentField"
             :locale="language?.toLowerCase() || browserLanguage"
-            :show-field-names="showFieldNames"
+            :show-field-names="shouldShowStepFieldNames"
             :verified-value="phoneVerifiedValues[currentField.uuid]"
             :default-value="submitter.phone"
             :submitter-slug="submitterSlug"
@@ -868,6 +897,48 @@ export default {
       const isMobileSafariIos = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && /AppleWebKit/i.test(navigator.userAgent)
 
       return isMobileSafariIos || /android|iphone|ipad/i.test(navigator.userAgent)
+    },
+    formContainerClasses () {
+      const classes = ['shadow-md', 'bg-base-100', 'border-base-200', 'border', 'p-4', 'rounded', 'form-container']
+
+      if (this.isMobile) {
+        classes.push('fixed', 'inset-0', 'w-full', 'flex', 'flex-col', 'items-center', 'justify-center', 'z-30', 'overflow-y-auto')
+      } else {
+        classes.push('absolute', 'bottom-0', 'w-full', 'overflow-hidden')
+
+        if (this.isBreakpointMd) {
+          classes.push('md:bottom-4')
+        }
+      }
+
+      return classes
+    },
+    formContainerStyle () {
+      const style = { backgroundColor: this.backgroundColor }
+
+      if (this.isMobile) {
+        style.minHeight = '100dvh'
+        style.paddingTop = 'max(env(safe-area-inset-top), 1.5rem)'
+        style.paddingBottom = 'max(env(safe-area-inset-bottom), 1.5rem)'
+      }
+
+      return style
+    },
+    shouldShowStepFieldNames () {
+      return this.showFieldNames && !this.isMobile
+    },
+    showMobileFieldLabel () {
+      return this.isMobile && !!this.currentField
+    },
+    currentFieldLabelText () {
+      if (!this.currentField) {
+        return ''
+      }
+
+      return this.currentField.name || this.currentField.title || this.t(this.currentField.type) || ''
+    },
+    isCurrentFieldOptional () {
+      return !!this.currentField && !this.currentField.required
     },
     readonlyConditionalFieldValues () {
       return this.readonlyConditionalFields.reduce((acc, f) => {
