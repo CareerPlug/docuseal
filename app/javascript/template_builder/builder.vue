@@ -220,7 +220,8 @@
               v-if="sortedDocuments.length && isBreakpointLg && editable"
               class="pb-4 space-y-2"
             >
-              <Upload
+              <!-- 1/12/26 - Hiding for now - CP-12023 -->
+              <!-- <Upload
                 v-if="withUploadButton"
                 :template-id="template.id"
                 :accept-file-types="acceptFileTypes"
@@ -241,7 +242,7 @@
                   class="w-5 h-5"
                 />
                 {{ t('add_blank_page') }}
-              </button>
+              </button> -->
             </div>
           </template>
         </div>
@@ -276,7 +277,8 @@
           class="sticky bottom-0 py-1 space-y-2"
           :style="{ backgroundColor }"
         >
-          <Upload
+          <!-- 1/12/26 - Hiding for now - CP-12023 -->
+          <!-- <Upload
             v-if="sortedDocuments.length && editable && withUploadButton"
             :accept-file-types="acceptFileTypes"
             :template-id="template.id"
@@ -297,7 +299,7 @@
               class="w-5 h-5"
             />
             {{ t('add_blank_page') }}
-          </button>
+          </button> -->
         </div>
       </div>
     </div>
