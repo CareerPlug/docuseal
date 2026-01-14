@@ -435,6 +435,7 @@ en: &en
   edit: Edit
   move: Move
   moving: moving
+  preview_label: 'Preview fields for:'
   preview: Preview
   upload: Upload
   clone_template: Clone Template

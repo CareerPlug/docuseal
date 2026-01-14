@@ -6,6 +6,10 @@
           <% if (auth_token = params[:auth_token] || session[:auth_token]) %>
             <%= hidden_field_tag :auth_token, auth_token %>
           <% end %>
+          <% if params[:task_preview_mode].present? %>
+            <%= hidden_field_tag :task_preview_mode, params[:task_preview_mode] %>
+          <% end %>
+          <span class="font-bold mr-2"><%= t('preview_label') %></span>
           <select onchange="this.form.submit()" name="uuid" class="select base-input text-center font-normal" style="width: 180px; flex-shrink: 0;">
             <% @template.submitters.each do |submitter| %>
               <%= tag.option(value: submitter['uuid'], selected: submitter['uuid'] == @submitter.uuid) do %>
@@ -15,9 +19,11 @@
           </select>
         </form>
       <% end %>
-      <a href="<%= edit_template_path(@template, params[:auth_token] || session[:auth_token] ? { auth_token: params[:auth_token] || session[:auth_token] } : {}) %>" class="base-button" data-turbo="false" style="flex-shrink: 0; padding: 0px 24px;">
-        <%= t('exit_preview') %>
-      </a>
+      <% unless params[:task_preview_mode] == 'true' %>
+        <a href="<%= edit_template_path(@template, params[:auth_token] || session[:auth_token] ? { auth_token: params[:auth_token] || session[:auth_token] } : {}) %>" class="base-button" data-turbo="false" style="flex-shrink: 0; padding: 0px 24px;">
+          <%= t('exit_preview') %>
+        </a>
+      <% end %>
     </div>
   </div>
 <% end %>
