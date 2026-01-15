@@ -22,7 +22,6 @@ class TemplatesFormPreviewController < ApplicationController
     Submissions.preload_with_pages(@submitter.submission)
     @attachments_index = ActiveStorage::Attachment.where(record: @submitter.submission.submitters, name: :attachments)
                                                   .preload(:blob).index_by(&:uuid)
-  
     @form_configs = Submitters::FormConfigs.call(@submitter)
   end
 
@@ -30,7 +29,6 @@ class TemplatesFormPreviewController < ApplicationController
 
   def save_params
     permitted = preview_params
-  
     @auth_token = permitted[:auth_token] || session[:auth_token]
     @task_preview_mode = permitted[:task_preview_mode]
     @accessible_partnership_ids = permitted[:accessible_partnership_ids]
