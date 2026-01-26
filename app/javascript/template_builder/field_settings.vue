@@ -392,7 +392,7 @@
       </span>
     </label>
   </li>
-  <li
+  <!-- <li
     v-if="field.type != 'stamp'"
   >
     <label
@@ -406,7 +406,7 @@
         {{ t('condition') }}
       </span>
     </label>
-  </li>
+  </li> -->
   <li v-if="field.type == 'number'">
     <label
       class="label-text cursor-pointer text-center w-full flex items-center"

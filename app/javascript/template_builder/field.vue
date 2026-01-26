@@ -78,7 +78,7 @@
               :stroke-width="1.6"
             />
           </button>
-          <button
+          <!-- <button
             v-if="field.conditions?.length"
             class="relative cursor-pointer text-transparent group-hover:text-base-content"
             :title="t('condition')"
@@ -88,7 +88,7 @@
               :width="18"
               :stroke-width="1.6"
             />
-          </button>
+          </button> -->
           <PaymentSettings
             v-if="field.type === 'payment'"
             :field="field"
@@ -129,7 +129,6 @@
                 @click-formula="isShowFormulaModal = true"
                 @click-font="isShowFontModal = true"
                 @click-description="isShowDescriptionModal = true"
-                @click-condition="isShowConditionsModal = true"
                 @set-draw="$emit('set-draw', $event)"
                 @remove-area="removeArea"
                 @scroll-to="$emit('scroll-to', $event)"
