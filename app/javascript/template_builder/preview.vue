@@ -16,7 +16,8 @@
           v-if="editable"
           class="flex justify-between w-full"
         >
-          <div
+          <!-- HIDING CONDITIONAL LOGIC FOR DOCUSEAL PRO - 1/22/2026 -->
+          <!-- <div
             style="width: 26px"
             class="flex flex-col justify-between group-hover:opacity-100"
             :class="{'opacity-0': !item.conditions?.length }"
@@ -32,7 +33,7 @@
                 />
               </button>
             </div>
-          </div>
+          </div> -->
           <div class="">
             <ReplaceButton
               v-if="withReplaceButton"
@@ -120,7 +121,7 @@
 <script>
 import Contenteditable from './contenteditable'
 import Upload from './upload'
-import { IconRouteAltLeft, IconSortDescending2 } from '@tabler/icons-vue'
+import { IconSortDescending2 } from '@tabler/icons-vue'
 import ConditionsModal from './conditions_modal'
 import ReplaceButton from './replace'
 import Field from './field'
@@ -130,7 +131,6 @@ export default {
   name: 'DocumentPreview',
   components: {
     Contenteditable,
-    IconRouteAltLeft,
     ConditionsModal,
     ReplaceButton,
     IconSortDescending2
