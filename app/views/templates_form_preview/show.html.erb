@@ -24,7 +24,11 @@
         </form>
       <% end %>
       <% unless @task_preview_mode == 'true' %>
-        <a href="<%= edit_template_path(@template, @auth_token || session[:auth_token] ? { auth_token: @auth_token || session[:auth_token] } : {}) %>" class="base-button" data-turbo="false" style="flex-shrink: 0; padding: 0px 24px;">
+        <% exit_params = {} %>
+        <% exit_params[:auth_token] = @auth_token || session[:auth_token] %>
+        <% exit_params[:external_account_id] = @external_account_id if @external_account_id.present? %>
+        <% exit_params[:accessible_partnership_ids] = @accessible_partnership_ids if @accessible_partnership_ids.present? %>
+        <a href="<%= edit_template_path(@template, exit_params) %>" class="base-button" data-turbo="false" style="flex-shrink: 0; padding: 0px 24px;">
           <%= t('exit_preview') %>
         </a>
       <% end %>
