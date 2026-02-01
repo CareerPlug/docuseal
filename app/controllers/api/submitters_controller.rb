@@ -37,37 +37,12 @@ module Api
         return render json: { error: 'Submitter has already completed the submission.' }, status: :unprocessable_entity
       end
 
-      submission = @submitter.submission
-      role = submission.template_submitters.find { |e| e['uuid'] == @submitter.uuid }['name']
-
-      normalized_params, new_attachments = Submissions::NormalizeParamUtils.normalize_submitter_params!(
-        submitter_params.merge(role:),
-        @submitter.template || Template.new(submitters: submission.template_submitters, account: @submitter.account),
-        for_submitter: @submitter
-      )
-
-      Submissions::CreateFromSubmitters.maybe_set_template_fields(submission, [normalized_params],
-                                                                  default_submitter_uuid: @submitter.uuid)
+      normalized_params, new_attachments = normalize_and_prepare_params
+      old_values = @submitter.values.dup
 
       assign_submitter_attrs(@submitter, normalized_params)
-
-      ApplicationRecord.transaction do
-        Submissions::NormalizeParamUtils.save_default_value_attachments!(new_attachments, [@submitter])
-
-        @submitter.save!
-
-        @submitter.submission.save!
-
-        SubmissionEvents.create_with_tracking_data(@submitter, 'api_complete_form', request) if @submitter.completed_at?
-      end
-
-      if @submitter.completed_at?
-        ProcessSubmitterCompletionJob.perform_async('submitter_id' => @submitter.id)
-      elsif normalized_params[:send_email] || normalized_params[:send_sms]
-        Submitters.send_signature_requests([@submitter])
-      end
-
-      SearchEntries.enqueue_reindex(@submitter)
+      save_submitter_and_track_changes(normalized_params, new_attachments, old_values)
+      handle_post_save_actions(normalized_params)
 
       render json: Submitters::SerializeForApi.call(@submitter, with_template: false, with_urls: true,
                                                                 with_events: false, params:)
@@ -168,6 +143,48 @@ module Api
       end
 
       maybe_filder_by_completed_at(submitters, params)
+    end
+
+    def normalize_and_prepare_params
+      submission = @submitter.submission
+      role = submission.template_submitters.find { |e| e['uuid'] == @submitter.uuid }['name']
+
+      normalized_params, new_attachments = Submissions::NormalizeParamUtils.normalize_submitter_params!(
+        submitter_params.merge(role:),
+        @submitter.template || Template.new(submitters: submission.template_submitters, account: @submitter.account),
+        for_submitter: @submitter
+      )
+
+      Submissions::CreateFromSubmitters.maybe_set_template_fields(submission, [normalized_params],
+                                                                  default_submitter_uuid: @submitter.uuid)
+
+      [normalized_params, new_attachments]
+    end
+
+    def save_submitter_and_track_changes(_normalized_params, new_attachments, old_values)
+      ApplicationRecord.transaction do
+        Submissions::NormalizeParamUtils.save_default_value_attachments!(new_attachments, [@submitter])
+
+        @submitter.save!
+
+        @submitter.submission.save!
+
+        Submitters::SubmitValues.track_form_update(@submitter, old_values, request, current_user)
+
+        return unless @submitter.completed_at?
+
+        SubmissionEvents.create_with_tracking_data(@submitter, 'api_complete_form', request, {}, current_user)
+      end
+    end
+
+    def handle_post_save_actions(normalized_params)
+      if @submitter.completed_at?
+        ProcessSubmitterCompletionJob.perform_async('submitter_id' => @submitter.id)
+      elsif normalized_params[:send_email] || normalized_params[:send_sms]
+        Submitters.send_signature_requests([@submitter])
+      end
+
+      SearchEntries.enqueue_reindex(@submitter)
     end
 
     def assign_external_id(submitter, attrs)

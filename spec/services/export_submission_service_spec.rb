@@ -187,6 +187,13 @@ RSpec.describe ExportSubmissionService do
           'status' => 'completed'
         )
         expect(completed_submitter).to have_key('external_submitter_id')
+
+        # New fields for granular audit tracking
+        expect(parsed_body).to have_key('values')
+        expect(parsed_body['values']).to be_an(Array)
+
+        expect(parsed_body).to have_key('submission_events')
+        expect(parsed_body['submission_events']).to be_an(Array)
       end
       service.call
     end

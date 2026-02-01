@@ -24,7 +24,8 @@ class SubmittersRequestChangesController < ApplicationController
           @submitter,
           'request_changes',
           request,
-          { reason: params[:reason], requested_by: current_user.id }
+          { reason: params[:reason], requested_by: current_user.id },
+          current_user
         )
       end
 

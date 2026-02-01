@@ -27,7 +27,11 @@ module SendWebhookRequest
     Faraday.post(uri) do |req|
       req.headers['Content-Type'] = 'application/json'
       req.headers['User-Agent'] = USER_AGENT
-      req.headers.merge!(webhook_url.secret.to_h) if webhook_url.secret.present?
+
+      # Send webhook secret headers from the configured secret hash
+      webhook_url.secret.each do |header_name, header_value|
+        req.headers[header_name] = header_value
+      end
 
       req.body = {
         event_type: event_type,

@@ -55,7 +55,11 @@ class ExportSubmissionService < ExportService
         }
       end,
       created_at: submission.created_at,
-      updated_at: submission.updated_at
+      updated_at: submission.updated_at,
+      # Include form field values for each submitter
+      values: build_values_array,
+      # Include granular submission events for audit trail
+      submission_events: build_submission_events_array
     }
   end
 
@@ -76,5 +80,60 @@ class ExportSubmissionService < ExportService
     else
       'pending'
     end
+  end
+
+  # Build array of form field values from all submitters
+  # Returns array of {field: name, value: value} hashes
+  def build_values_array
+    submission.submitters.flat_map do |submitter|
+      build_submitter_values(submitter)
+    end
+  end
+
+  # Build values for a single submitter
+  def build_submitter_values(submitter)
+    fields = submission.template_fields.presence || submission.template&.fields || []
+    attachments_index = submitter.attachments.index_by(&:uuid)
+
+    fields.filter_map do |field|
+      next if field['submitter_uuid'] != submitter.uuid
+      next if field['type'] == 'heading'
+
+      field_name = field['name'].presence || "#{field['type'].titleize} Field"
+      next unless submitter.values.key?(field['uuid']) || submitter.completed_at?
+
+      value = fetch_field_value(field, submitter.values[field['uuid']], attachments_index)
+
+      { field: field_name, value: }
+    end
+  end
+
+  # Build array of submission events for audit trail
+  def build_submission_events_array
+    submission.submission_events.order(:event_timestamp).map do |event|
+      {
+        id: event.id,
+        event_type: event.event_type,
+        event_timestamp: event.event_timestamp.iso8601,
+        data: event.data
+      }
+    end
+  end
+
+  # Fetch the value for a field, handling special types
+  def fetch_field_value(field, value, attachments_index)
+    if field['type'].in?(%w[image signature initials stamp payment])
+      rails_storage_proxy_url(attachments_index[value])
+    elsif field['type'] == 'file'
+      Array.wrap(value).compact_blank.filter_map { |e| rails_storage_proxy_url(attachments_index[e]) }
+    else
+      value
+    end
+  end
+
+  def rails_storage_proxy_url(attachment)
+    return if attachment.blank?
+
+    ActiveStorage::Blob.proxy_url(attachment.blob)
   end
 end

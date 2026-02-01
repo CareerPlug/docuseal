@@ -177,7 +177,10 @@ module Api
         Submissions::NormalizeParamUtils.save_default_value_attachments!(attachments, submitters)
 
         submitters.each do |submitter|
-          SubmissionEvents.create_with_tracking_data(submitter, 'api_complete_form', request) if submitter.completed_at?
+          if submitter.completed_at?
+            SubmissionEvents.create_with_tracking_data(submitter, 'api_complete_form', request, {},
+                                                       current_user)
+          end
         end
 
         submissions
