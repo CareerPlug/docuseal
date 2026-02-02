@@ -362,7 +362,7 @@ export default {
       default: null
     }
   },
-  emits: ['start-resize', 'stop-resize', 'start-drag', 'stop-drag', 'remove', 'scroll-to'],
+  emits: ['start-resize', 'stop-resize', 'start-drag', 'stop-drag', 'remove', 'scroll-to', 'field-clicked'],
   data () {
     return {
       isShowFormulaModal: false,
@@ -821,6 +821,11 @@ export default {
         this.isHeadingSelected = !this.isMoved
 
         this.focusValueInput()
+      }
+
+      // Emit field-clicked event if it was a simple click (not a drag)
+      if (!this.isMoved && this.editable) {
+        this.$emit('field-clicked', this.field)
       }
 
       this.isDragged = false

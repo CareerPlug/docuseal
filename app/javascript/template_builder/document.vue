@@ -24,6 +24,7 @@
       @remove-area="$emit('remove-area', $event)"
       @scroll-to="scrollToArea"
       @draw="$emit('draw', { area: {...$event.area, attachment_uuid: document.uuid }, isTooSmall: $event.isTooSmall })"
+      @field-clicked="$emit('field-clicked', $event)"
     />
   </div>
 </template>
@@ -105,7 +106,7 @@ export default {
       default: false
     }
   },
-  emits: ['draw', 'drop-field', 'remove-area'],
+  emits: ['draw', 'drop-field', 'remove-area', 'field-clicked'],
   data () {
     return {
       pageRefs: []
