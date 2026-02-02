@@ -199,6 +199,7 @@
                 @draw="[onDraw($event), withSelectedFieldType ? '' : drawFieldType = '', showDrawField = false]"
                 @drop-field="onDropfield"
                 @remove-area="removeArea"
+                @field-clicked="scrollFieldIntoSidebar"
               />
               <DocumentControls
                 v-if="isBreakpointLg && editable"
@@ -1729,6 +1730,29 @@ export default {
       documentRef.scrollToArea(area)
 
       this.selectedAreaRef.value = area
+    },
+    scrollFieldIntoSidebar (field) {
+      // Find the submitter for this field
+      const submitter = this.template.submitters.find(s => s.uuid === field.submitter_uuid)
+
+      // Switch to the correct submitter if needed
+      if (submitter && submitter !== this.selectedSubmitter) {
+        this.selectedSubmitter = submitter
+      }
+
+      // Wait for submitter switch to complete
+      this.$nextTick(() => {
+        // Scroll field into view in sidebar (with null check for safety)
+        if (this.$refs.fields) {
+          this.$refs.fields.scrollFieldIntoView(field)
+        }
+
+        // Highlight the field by setting the selected area
+        const area = field.areas?.[0]
+        if (area) {
+          this.selectedAreaRef.value = area
+        }
+      })
     },
     baseFetch (path, options = {}) {
       return fetch(this.baseUrl + path, {

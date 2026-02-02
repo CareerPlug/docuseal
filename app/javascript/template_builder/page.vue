@@ -33,6 +33,7 @@
         @stop-resize="resizeDirection = null"
         @remove="$emit('remove-area', item.area)"
         @scroll-to="$emit('scroll-to', $event)"
+        @field-clicked="$emit('field-clicked', $event)"
       />
       <FieldArea
         v-if="newArea"
@@ -140,7 +141,7 @@ export default {
       required: true
     }
   },
-  emits: ['draw', 'drop-field', 'remove-area', 'scroll-to'],
+  emits: ['draw', 'drop-field', 'remove-area', 'scroll-to', 'field-clicked'],
   data () {
     return {
       areaRefs: [],

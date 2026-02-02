@@ -323,6 +323,30 @@ export default {
     }
   },
   methods: {
+    scrollFieldIntoView (field) {
+      // Wait for next tick to ensure DOM is updated
+      this.$nextTick(() => {
+        // Find the field element in the sidebar
+        const fieldElement = this.$refs.fields.querySelector(`[data-uuid="${field.uuid}"]`)
+
+        if (fieldElement) {
+          // Scroll the field into view with smooth behavior and centered positioning
+          fieldElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          })
+
+          // Add temporary highlight class
+          fieldElement.classList.add('field-highlight')
+
+          // Remove highlight after animation
+          setTimeout(() => {
+            fieldElement.classList.remove('field-highlight')
+          }, 2000)
+        }
+      })
+    },
     onDragstart (event, field) {
       this.removeDragOverlay(event)
 
@@ -427,3 +451,20 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+@keyframes field-highlight-bg {
+  0% {
+    background-color: rgb(191, 219, 254);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+:deep(.field-highlight .fields-list-item) {
+  animation: field-highlight-bg 2s ease-out;
+  border-color: rgb(59, 130, 246) !important;
+  border-width: 2px !important;
+}
+</style>
