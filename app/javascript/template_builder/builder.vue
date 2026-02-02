@@ -1725,7 +1725,7 @@ export default {
       })
     },
     scrollToArea (area) {
-     const documentRef = this.documentRefs.find((a) => a.document.uuid === area.attachment_uuid)
+      const documentRef = this.documentRefs.find((a) => a.document.uuid === area.attachment_uuid)
 
       documentRef.scrollToArea(area)
 
@@ -1742,8 +1742,10 @@ export default {
 
       // Wait for submitter switch to complete
       this.$nextTick(() => {
-        // Scroll field into view in sidebar
-        this.$refs.fields.scrollFieldIntoView(field)
+        // Scroll field into view in sidebar (with null check for safety)
+        if (this.$refs.fields) {
+          this.$refs.fields.scrollFieldIntoView(field)
+        }
 
         // Highlight the field by setting the selected area
         const area = field.areas?.[0]
