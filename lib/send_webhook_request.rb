@@ -29,7 +29,7 @@ module SendWebhookRequest
       req.headers['User-Agent'] = USER_AGENT
 
       # Send webhook secret headers from the configured secret hash
-      webhook_url.secret.each do |header_name, header_value|
+      webhook_url.secret&.each do |header_name, header_value|
         req.headers[header_name] = header_value
       end
 

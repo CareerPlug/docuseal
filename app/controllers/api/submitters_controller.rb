@@ -41,7 +41,7 @@ module Api
       old_values = @submitter.values.dup
 
       assign_submitter_attrs(@submitter, normalized_params)
-      save_submitter_and_track_changes(normalized_params, new_attachments, old_values)
+      save_submitter_and_track_changes(new_attachments, old_values)
       handle_post_save_actions(normalized_params)
 
       render json: Submitters::SerializeForApi.call(@submitter, with_template: false, with_urls: true,
@@ -161,7 +161,7 @@ module Api
       [normalized_params, new_attachments]
     end
 
-    def save_submitter_and_track_changes(_normalized_params, new_attachments, old_values)
+    def save_submitter_and_track_changes(new_attachments, old_values)
       ApplicationRecord.transaction do
         Submissions::NormalizeParamUtils.save_default_value_attachments!(new_attachments, [@submitter])
 
