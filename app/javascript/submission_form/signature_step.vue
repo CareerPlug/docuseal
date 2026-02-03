@@ -162,9 +162,9 @@
         class="absolute top-0 right-0 left-0 bottom-0"
       />
       <canvas
-        v-show="!modelValue && !computedPreviousValue"
+        v-show="!modelValue && !computedPreviousValue && !isTextSignature"
         ref="canvas"
-        style="padding: 1px; 0"
+        style="padding: 1px 0"
         class="bg-white border border-base-300 rounded-2xl w-full draw-canvas"
       />
       <div
