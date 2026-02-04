@@ -12,20 +12,24 @@
 #  updated_at      :datetime         not null
 #  submission_id   :integer          not null
 #  submitter_id    :integer
+#  user_id         :bigint
 #
 # Indexes
 #
 #  index_submission_events_on_created_at     (created_at)
 #  index_submission_events_on_submission_id  (submission_id)
 #  index_submission_events_on_submitter_id   (submitter_id)
+#  index_submission_events_on_user_id        (user_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (submission_id => submissions.id)
 #  fk_rails_...  (submitter_id => submitters.id)
+#  fk_rails_...  (user_id => users.id)
 #
 class SubmissionEvent < ApplicationRecord
   belongs_to :submission
+  belongs_to :user, optional: true
   has_one :account, through: :submission
   belongs_to :submitter, optional: true
 
@@ -55,7 +59,8 @@ class SubmissionEvent < ApplicationRecord
     complete_form: 'complete_form',
     decline_form: 'decline_form',
     request_changes: 'request_changes',
-    api_complete_form: 'api_complete_form'
+    api_complete_form: 'api_complete_form',
+    form_update: 'form_update'
   }, scope: false
 
   private

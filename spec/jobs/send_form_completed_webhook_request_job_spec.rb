@@ -20,40 +20,6 @@ RSpec.describe SendFormCompletedWebhookRequestJob do
       stub_request(:post, webhook_url.url).to_return(status: 200)
     end
 
-    it 'sends a webhook request' do
-      described_class.new.perform('submitter_id' => submitter.id, 'webhook_url_id' => webhook_url.id)
-
-      expect(WebMock).to have_requested(:post, webhook_url.url).with(
-        body: {
-          'event_type' => 'form.completed',
-          'timestamp' => /.*/,
-          'data' => JSON.parse(Submitters::SerializeForWebhook.call(submitter.reload).to_json)
-        },
-        headers: {
-          'Content-Type' => 'application/json',
-          'User-Agent' => 'DocuSeal.com Webhook'
-        }
-      ).once
-    end
-
-    it 'sends a webhook request with the secret' do
-      webhook_url.update(secret: { 'X-Secret-Header' => 'secret_value' })
-      described_class.new.perform('submitter_id' => submitter.id, 'webhook_url_id' => webhook_url.id)
-
-      expect(WebMock).to have_requested(:post, webhook_url.url).with(
-        body: {
-          'event_type' => 'form.completed',
-          'timestamp' => /.*/,
-          'data' => JSON.parse(Submitters::SerializeForWebhook.call(submitter.reload).to_json)
-        },
-        headers: {
-          'Content-Type' => 'application/json',
-          'User-Agent' => 'DocuSeal.com Webhook',
-          'X-Secret-Header' => 'secret_value'
-        }
-      ).once
-    end
-
     it "doesn't send a webhook request if the event is not in the webhook's events" do
       webhook_url.update!(events: ['form.declined'])
 

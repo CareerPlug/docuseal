@@ -19,8 +19,14 @@ class SendFormCompletedWebhookRequestJob
 
     ActiveStorage::Current.url_options = Docuseal.default_url_options
 
+    # Build the payload with submission events for granular audit tracking
+    webhook_data = Submitters::SerializeForWebhook.call(submitter)
+
+    # Add submission events for CareerPlug ATS integration
+    webhook_data['submission_events'] = serialize_submission_events(submitter.submission)
+
     resp = SendWebhookRequest.call(webhook_url, event_type: 'form.completed',
-                                                data: Submitters::SerializeForWebhook.call(submitter))
+                                                data: webhook_data)
 
     if (resp.nil? || resp.status.to_i >= 400) && attempt <= MAX_ATTEMPTS &&
        (!Docuseal.multitenant? || submitter.account.account_configs.exists?(key: :plan))
@@ -29,6 +35,22 @@ class SendFormCompletedWebhookRequestJob
                                                       'attempt' => attempt + 1,
                                                       'last_status' => resp&.status.to_i
                                                     })
+    end
+  end
+
+  private
+
+  # Serialize submission events for webhook payload
+  # Returns array of event hashes with field-level change tracking
+  def serialize_submission_events(submission)
+    submission.submission_events.order(:event_timestamp).map do |event|
+      {
+        id: event.id,
+        event_type: event.event_type,
+        event_timestamp: event.event_timestamp.iso8601,
+        user_id: event.user_id,
+        data: event.data
+      }
     end
   end
 end

@@ -10,11 +10,11 @@ module Submitters
 
     module_function
 
-    def call(submitter, params, request, validate_required: true)
+    def call(submitter, params, request, current_user = nil, validate_required: true)
       Submissions.update_template_fields!(submitter.submission) if submitter.submission.template_fields.blank?
 
       unless submitter.submission_events.exists?(event_type: 'start_form')
-        SubmissionEvents.create_with_tracking_data(submitter, 'start_form', request)
+        SubmissionEvents.create_with_tracking_data(submitter, 'start_form', request, {}, current_user)
 
         WebhookUrls.for_account_id(submitter.account_id, 'form.started').each do |webhook_url|
           SendFormStartedWebhookRequestJob.perform_async('submitter_id' => submitter.id,
@@ -22,9 +22,14 @@ module Submitters
         end
       end
 
+      old_values = submitter.values.dup
+
       update_submitter!(submitter, params, request, validate_required:)
 
       submitter.submission.save!
+
+      # Track form updates when values change (but not on completion, as that creates complete_form event)
+      track_form_update(submitter, old_values, request, current_user) if params[:completed] != 'true'
 
       ProcessSubmitterCompletionJob.perform_async('submitter_id' => submitter.id) if submitter.completed_at?
 
@@ -344,6 +349,32 @@ module Submitters
 
     def validate_value!(_value, _field, _params, _submitter, _request)
       true
+    end
+
+    def track_form_update(submitter, old_values, request, current_user = nil)
+      # Use existing O(1) lookup index from submission model
+      fields_by_uuid = submitter.submission.fields_uuid_index
+
+      changes = submitter.values.filter_map do |field_uuid, new_value|
+        old_value = old_values[field_uuid]
+        next if old_value == new_value
+
+        field = fields_by_uuid[field_uuid]
+        next unless field
+
+        { 'field' => field['name'], 'from' => old_value, 'to' => new_value }
+      end
+
+      # Only create event if there are actual changes
+      return if changes.empty?
+
+      SubmissionEvents.create_with_tracking_data(
+        submitter,
+        'form_update',
+        request,
+        { 'changes' => changes },
+        current_user
+      )
     end
   end
 end

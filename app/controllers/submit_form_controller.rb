@@ -67,7 +67,7 @@ class SubmitFormController < ApplicationController
                     status: :unprocessable_entity
     end
 
-    Submitters::SubmitValues.call(@submitter, params, request)
+    Submitters::SubmitValues.call(@submitter, params, request, current_user, validate_required: true)
 
     head :ok
   rescue Submitters::SubmitValues::RequiredFieldError => e

@@ -11,12 +11,14 @@ module SubmissionEvents
     ).first(TRACKING_PARAM_LENGTH)
   end
 
-  def create_with_tracking_data(submitter, event_type, request, data = {})
-    SubmissionEvent.create!(submitter:, event_type:, data: {
+  def create_with_tracking_data(submitter, event_type, request, data = {}, user = nil)
+    user ||= request.env['warden']&.user(:user)
+
+    SubmissionEvent.create!(submitter:, event_type:, user:, data: {
       ip: request.remote_ip,
       ua: request.user_agent,
       sid: request.session.id.to_s,
-      uid: request.env['warden'].user(:user)&.id,
+      uid: user&.id,
       **data
     }.compact_blank)
   end
