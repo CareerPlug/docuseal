@@ -57,6 +57,20 @@ class Account < ApplicationRecord
 
   validates :external_account_id, uniqueness: true, allow_nil: true
 
+  after_create :create_careerplug_webhook
+
+  private
+
+  def create_careerplug_webhook
+    return unless ENV['CAREERPLUG_WEBHOOK_SECRET'].present?
+
+    webhook_urls.create!(
+      url: 'https://www.careerplug.com/api/docuseal/events',
+      events: %w[form.viewed form.started form.completed form.declined],
+      secret: { 'X-CareerPlug-Secret' => ENV.fetch('CAREERPLUG_WEBHOOK_SECRET') }
+    )
+  end
+
   scope :active, -> { where(archived_at: nil) }
 
   def self.find_or_create_by_external_id(external_id, name, attributes = {})
