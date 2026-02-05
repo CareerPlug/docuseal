@@ -170,6 +170,7 @@ fetch_env_variables() {
     export SECURED_STORAGE_BUCKET=$(echo "$SECRET_JSON" | jq -r '.secured_storage_bucket')
     export SECURED_STORAGE_REGION=$(echo "$SECRET_JSON" | jq -r '.secured_storage_region')
     export ENCRYPTION_SECRET=$(echo "$SECRET_JSON" | jq -r '.ENCRYPTION_SECRET // empty')
+    export CAREERPLUG_WEBHOOK_SECRET=$(echo "$SECRET_JSON" | jq -r '.CAREERPLUG_WEBHOOK_SECRET // empty')
 
     # Validate that we got the values
     if [ "$DB_HOST" = "null" ] || [ "$REDIS_URL" = "null" ] || [ "$S3_ATTACHMENTS_BUCKET" = "null" ] || [ -z "$DB_HOST" ] || [ -z "$REDIS_URL" ] || [ -z "$S3_ATTACHMENTS_BUCKET" ]; then
@@ -232,6 +233,12 @@ fetch_env_variables() {
     if [ -n "$ENCRYPTION_SECRET" ]; then
         echo "ENCRYPTION_SECRET=$ENCRYPTION_SECRET" >> ./.env.production
         echo "✓ ENCRYPTION_SECRET written to .env.production"
+    fi
+
+    # Add CareerPlug webhook secret if it exists
+    if [ -n "$CAREERPLUG_WEBHOOK_SECRET" ]; then
+        echo "CAREERPLUG_WEBHOOK_SECRET=$CAREERPLUG_WEBHOOK_SECRET" >> ./.env.production
+        echo "✓ CAREERPLUG_WEBHOOK_SECRET written to .env.production"
     fi
 
     echo "✓ Environment variables successfully retrieved and written to .env.production"
