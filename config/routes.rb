@@ -49,6 +49,7 @@ Rails.application.routes.draw do
         post :pdf
       end
     end
+    resources :submit_form_data, only: %i[show], path: 'submit_form/:slug/data', param: :slug
     resources :tools, only: %i[] do
       post :merge, on: :collection
       post :verify, on: :collection
@@ -119,6 +120,7 @@ Rails.application.routes.draw do
   resources :templates, only: %i[index], controller: 'templates_dashboard'
   resources :submissions_filters, only: %i[show], param: 'name'
   resources :templates, only: %i[new create edit update show destroy] do
+    resource :data, only: %i[show], controller: 'templates_data'
     resource :debug, only: %i[show], controller: 'templates_debug' if Rails.env.development?
     resources :documents, only: %i[create], controller: 'template_documents'
     resources :clone_and_replace, only: %i[create], controller: 'templates_clone_and_replace'
