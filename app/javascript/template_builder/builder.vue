@@ -350,8 +350,9 @@ import MobileFields from './mobile_fields'
 import FieldSubmitter from './field_submitter'
 import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
-import { ref, computed, toRaw } from 'vue'
+import { ref, computed, toRaw, watch } from 'vue'
 import * as i18n from './i18n'
+import { countDefaultFieldNames } from './default_field_highlight'
 export default {
   name: 'TemplateBuilder',
   components: {
@@ -780,6 +781,15 @@ export default {
         this.pendingFieldAttachmentUuids.push(item.attachment_uuid)
       }
     })
+
+    watch(() => this.template.fields, (fields) => {
+      const hasDefaultFields = countDefaultFieldNames(fields) > 0
+
+      window.parent.postMessage({
+        type: 'DOCUSEAL_BUILDER_HAVE_DEFAULT_FIELDS',
+        value: hasDefaultFields
+      }, '*')
+    }, { deep: true, immediate: true })
   },
   unmounted () {
     document.removeEventListener('keyup', this.onKeyUp)
