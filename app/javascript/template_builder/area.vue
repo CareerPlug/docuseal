@@ -162,7 +162,8 @@
       ref="touchValueTarget"
       class="flex h-full w-full field-area"
       dir="auto"
-      :class="[isValueInput ? 'bg-opacity-50' : 'bg-opacity-80', field.type === 'heading' ? 'bg-gray-50' : bgColors[submitterIndex % bgColors.length], isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas) ? fontClasses : 'justify-center items-center']"
+      :class="[isValueInput ? 'bg-opacity-50' : 'bg-opacity-80', field.type === 'heading' ? 'bg-gray-50' : bgColors[submitterIndex % bgColors.length], isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas) ? fontClasses : 'justify-center items-center', fieldHighlightClasses]"
+      :style="fieldHighlightStyles"
       @click="focusValueInput"
     >
       <span
@@ -300,6 +301,7 @@ import ConditionsModal from './conditions_modal'
 import DescriptionModal from './description_modal'
 import { IconX, IconCheck, IconDotsVertical } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
+import { isDefaultFieldName, getDefaultFieldHighlightClasses, getDefaultFieldHighlightStyles } from './default_field_highlight'
 
 export default {
   name: 'FieldArea',
@@ -385,6 +387,15 @@ export default {
     fieldNames: FieldType.computed.fieldNames,
     fieldLabels: FieldType.computed.fieldLabels,
     fieldIcons: FieldType.computed.fieldIcons,
+    isDefaultFieldName () {
+      return isDefaultFieldName(this.field?.name || this.defaultName)
+    },
+    fieldHighlightClasses () {
+      return this.isDefaultFieldName ? getDefaultFieldHighlightClasses() : ''
+    },
+    fieldHighlightStyles () {
+      return this.isDefaultFieldName ? getDefaultFieldHighlightStyles() : {}
+    },
     isDefaultValuePresent () {
       if (this.field?.type === 'radio' && this.field?.areas?.length > 1) {
         return false
