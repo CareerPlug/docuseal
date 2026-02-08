@@ -38,9 +38,7 @@ export function isDefaultFieldName(fieldName) {
   if (!fieldName || typeof fieldName !== 'string' || fieldName.trim() === '') {
     return true
   }
-  if (isDefault) {
-    // console.log(`DocuSeal: Found default field "${fieldName}"`)
-  }
+  const isDefault = DEFAULT_FIELD_NAME_REGEX.test(fieldName)
   return isDefault
 }
 
