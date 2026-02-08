@@ -1,6 +1,6 @@
 /**
  * Default Field Name Highlighting
- * 
+ *
  * This module provides utilities for detecting and highlighting fields with default names.
  * Default names follow the pattern "[Field Type] Field [Number]" (e.g., "Text Field 1", "Signature Field 2")
  * or "[Field Type] [Number]" for headings (e.g., "Heading 1", "Heading 2")
@@ -34,7 +34,7 @@ export const DEFAULT_FIELD_NAME_REGEX = /^(Text|Signature|Initials|Date|Number|I
  * @param {string} fieldName - The field name to check
  * @returns {boolean} True if the field name matches the default pattern
  */
-export function isDefaultFieldName(fieldName) {
+export function isDefaultFieldName (fieldName) {
   if (!fieldName || typeof fieldName !== 'string' || fieldName.trim() === '') {
     return true
   }
@@ -46,7 +46,7 @@ export function isDefaultFieldName(fieldName) {
  * Get the CSS classes for highlighting a default-named field
  * @returns {string} CSS classes for indigo highlighting
  */
-export function getDefaultFieldHighlightClasses() {
+export function getDefaultFieldHighlightClasses () {
   return '!border-indigo-500 !bg-indigo-100'
 }
 
@@ -54,7 +54,7 @@ export function getDefaultFieldHighlightClasses() {
  * Get the inline styles for highlighting a default-named field
  * @returns {Object} Inline styles for indigo highlighting
  */
-export function getDefaultFieldHighlightStyles() {
+export function getDefaultFieldHighlightStyles () {
   return {
     borderWidth: '3px',
     borderStyle: 'solid'
@@ -65,7 +65,7 @@ export function getDefaultFieldHighlightStyles() {
  * Get the tooltip message for default-named fields
  * @returns {string} Tooltip message explaining why the field is highlighted
  */
-export function getDefaultFieldTooltipMessage() {
+export function getDefaultFieldTooltipMessage () {
   return 'This field has a default name. Please rename it to something more descriptive for a better form filling experience.'
 }
 
@@ -74,7 +74,7 @@ export function getDefaultFieldTooltipMessage() {
  * @param {number} count - Number of fields with default names
  * @returns {string} Warning message
  */
-export function getDefaultFieldWarningMessage(count) {
+export function getDefaultFieldWarningMessage (count) {
   if (count === 1) {
     return 'You have 1 field with a default name. Please rename it to something more descriptive for a better form filling experience.'
   }
@@ -86,7 +86,7 @@ export function getDefaultFieldWarningMessage(count) {
  * @param {Array} fields - Array of field objects
  * @returns {number} Count of fields with default names
  */
-export function countDefaultFieldNames(fields) {
+export function countDefaultFieldNames (fields) {
   if (!Array.isArray(fields)) {
     return 0
   }
@@ -98,7 +98,7 @@ export function countDefaultFieldNames(fields) {
  * @param {Array} fields - Array of field objects
  * @returns {Array} Array of fields with default names
  */
-export function getDefaultFieldNames(fields) {
+export function getDefaultFieldNames (fields) {
   if (!Array.isArray(fields)) {
     return []
   }
