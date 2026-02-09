@@ -90,6 +90,18 @@
       :height="20"
     />
   </button>
+  <button
+    v-if="!isFormVisible && !isCompleted"
+    id="expand_form_button_x"
+    class="btn btn-neutral flex text-white fixed top-4 right-4 z-40"
+    :title="t('expand')"
+    @click.prevent="isFormVisible = true"
+  >
+    <IconX
+      :width="20"
+      :height="20"
+    />
+  </button>
   <div
     v-show="isFormVisible"
     id="form_container"
@@ -97,7 +109,7 @@
     :style="formContainerStyle"
   >
     <button
-      v-if="!isCompleted"
+      v-if="!isCompleted && isFormVisible"
       id="minimize_form_button"
       class="absolute right-0 top-0 minimize-form-button"
       :class="currentField?.description?.length > 100 ? 'mr-1 mt-1 md:mr-2 md:mt-2': 'mr-2 mt-2 hidden md:block'"
@@ -598,7 +610,7 @@ import DateStep from './date_step'
 import MarkdownContent from './markdown_content'
 import InviteForm from './invite_form'
 import FormCompleted from './completed'
-import { IconInnerShadowTop, IconArrowsDiagonal, IconWritingSign, IconArrowsDiagonalMinimize2 } from '@tabler/icons-vue'
+import { IconInnerShadowTop, IconArrowsDiagonal, IconWritingSign, IconArrowsDiagonalMinimize2, IconX } from '@tabler/icons-vue'
 import AppearsOn from './appears_on'
 import i18n from './i18n'
 
@@ -647,6 +659,7 @@ export default {
     MarkdownContent,
     PaymentStep,
     IconArrowsDiagonalMinimize2,
+    IconX,
     FormCompleted
   },
   provide () {
