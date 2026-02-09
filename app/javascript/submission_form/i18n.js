@@ -44,6 +44,7 @@ const en = {
   minimize: 'Minimize',
   payment: 'Payment',
   phone: 'Phone',
+  preview: 'Preview',
   start_now: 'Start Now',
   continue: 'Continue',
   sign_now: 'Sign Now',
