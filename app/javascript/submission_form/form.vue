@@ -91,7 +91,7 @@
     />
   </button>
   <button
-    v-if="!isFormVisible && !isCompleted"
+    v-if="!isFormVisible && !isCompleted && isMobile"
     id="expand_form_button_x"
     class="btn btn-neutral flex text-white fixed top-4 right-4 z-40"
     :title="t('expand')"
@@ -109,10 +109,22 @@
     :style="formContainerStyle"
   >
     <button
-      v-if="!isCompleted && isFormVisible"
+      v-if="!isCompleted && isFormVisible && isMobile && currentField?.type !== 'signature'"
+      id="close_form_button"
+      class="absolute right-0 top-0 minimize-form-button mr-2 mt-2"
+      :title="t('minimize')"
+      @click.prevent="minimizeForm"
+    >
+      <IconEye
+        :width="20"
+        :height="20"
+      />
+    </button>
+    <button
+      v-if="!isCompleted && isFormVisible && !isMobile"
       id="minimize_form_button"
       class="absolute right-0 top-0 minimize-form-button"
-      :class="currentField?.description?.length > 100 ? 'mr-1 mt-1 md:mr-2 md:mt-2': 'mr-2 mt-2 hidden md:block'"
+      :class="currentField?.description?.length > 100 ? 'mr-1 mt-1 md:mr-2 md:mt-2': 'mr-2 mt-2'"
       :title="t('minimize')"
       @click.prevent="minimizeForm"
     >
@@ -610,7 +622,7 @@ import DateStep from './date_step'
 import MarkdownContent from './markdown_content'
 import InviteForm from './invite_form'
 import FormCompleted from './completed'
-import { IconInnerShadowTop, IconArrowsDiagonal, IconWritingSign, IconArrowsDiagonalMinimize2, IconX } from '@tabler/icons-vue'
+import { IconInnerShadowTop, IconArrowsDiagonal, IconWritingSign, IconArrowsDiagonalMinimize2, IconX, IconEye } from '@tabler/icons-vue'
 import AppearsOn from './appears_on'
 import i18n from './i18n'
 
@@ -660,6 +672,7 @@ export default {
     PaymentStep,
     IconArrowsDiagonalMinimize2,
     IconX,
+    IconEye,
     FormCompleted
   },
   provide () {
