@@ -94,7 +94,7 @@
     v-if="!isFormVisible && !isCompleted && isMobile"
     id="expand_form_button_x"
     class="btn btn-neutral flex text-white fixed top-4 right-4 z-40"
-    :title="t('expand')"
+    :title="t('preview')"
     @click.prevent="isFormVisible = true"
   >
     <IconX
@@ -112,7 +112,7 @@
       v-if="!isCompleted && isFormVisible && isMobile && currentField?.type !== 'signature'"
       id="close_form_button"
       class="absolute right-0 top-0 minimize-form-button mr-2 mt-2"
-      :title="t('minimize')"
+      :title="t('preview')"
       @click.prevent="minimizeForm"
     >
       <IconEye
