@@ -47,7 +47,7 @@ export function isDefaultFieldName (fieldName) {
  * @returns {string} CSS classes for indigo highlighting
  */
 export function getDefaultFieldHighlightClasses () {
-  return '!border-indigo-500 !bg-indigo-100'
+  return '!border-yellow-500 !bg-yellow-200'
 }
 
 /**
