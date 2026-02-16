@@ -27,16 +27,16 @@
 #
 describe WebhookUrl do
   describe 'validations' do
-    context 'owner presence' do
+    context 'with owner presence' do
       it 'is valid with account_id and no partnership_id' do
         webhook = build(:webhook_url, account: create(:account), partnership: nil)
         expect(webhook).to be_valid
       end
 
       it 'is valid with partnership_id and no account_id' do
-        partnership = nil
-        # Disable webhook creation callback for this test
-        allow_any_instance_of(Partnership).to receive(:create_careerplug_webhook)
+        # Disable webhook creation callback by removing env vars
+        stub_const('ENV', ENV.to_hash.except('CAREERPLUG_WEBHOOK_URL', 'CAREERPLUG_WEBHOOK_SECRET'))
+
         partnership = create(:partnership)
         webhook = build(:webhook_url,
                         account: nil,
@@ -46,6 +46,8 @@ describe WebhookUrl do
       end
 
       it 'is invalid with both account_id and partnership_id' do
+        stub_const('ENV', ENV.to_hash.except('CAREERPLUG_WEBHOOK_URL', 'CAREERPLUG_WEBHOOK_SECRET'))
+
         webhook = build(:webhook_url, account: create(:account), partnership: create(:partnership))
         expect(webhook).not_to be_valid
         expect(webhook.errors[:base]).to include('Must have either account_id or partnership_id, but not both')
@@ -58,13 +60,9 @@ describe WebhookUrl do
       end
     end
 
-    context 'partnership events constraint' do
+    context 'with partnership events constraint' do
       it 'only includes template.* events in PARTNERSHIP_EVENTS' do
-        WebhookUrl::PARTNERSHIP_EVENTS.each do |event|
-          expect(event).to start_with('template.'),
-                            "PARTNERSHIP_EVENTS should only contain 'template.*' events, found: #{event}. " \
-                            'Partnerships do not have submissions or submitters.'
-        end
+        expect(WebhookUrl::PARTNERSHIP_EVENTS).to all(start_with('template.'))
       end
 
       it 'PARTNERSHIP_EVENTS is a subset of EVENTS' do

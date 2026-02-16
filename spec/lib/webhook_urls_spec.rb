@@ -28,9 +28,9 @@ RSpec.describe WebhookUrls do
 
       it 'filters by event type' do
         non_matching_webhook = create(:webhook_url,
-                                       partnership: partnership,
-                                       account: nil,
-                                       events: ['template.updated'])
+                                      partnership: partnership,
+                                      account: nil,
+                                      events: ['template.updated'])
 
         webhooks = described_class.for_template(template, 'template.created')
         expect(webhooks).to include(partnership_webhook)
@@ -56,9 +56,9 @@ RSpec.describe WebhookUrls do
 
       it 'does not return partnership webhooks' do
         partnership_webhook = create(:webhook_url,
-                                      partnership: create(:partnership),
-                                      account: nil,
-                                      events: ['template.created'])
+                                     partnership: create(:partnership),
+                                     account: nil,
+                                     events: ['template.created'])
         webhooks = described_class.for_template(template, 'template.created')
         expect(webhooks).not_to include(partnership_webhook)
       end
@@ -76,13 +76,13 @@ RSpec.describe WebhookUrls do
 
   describe '.for_partnership_id' do
     let(:partnership) { create(:partnership) }
-    let!(:webhook1) do
+    let!(:webhook) do
       create(:webhook_url,
              partnership: partnership,
              account: nil,
              events: ['template.created', 'template.updated'])
     end
-    let!(:webhook2) do
+    let!(:webhook_update_only) do
       create(:webhook_url,
              partnership: partnership,
              account: nil,
@@ -91,13 +91,13 @@ RSpec.describe WebhookUrls do
 
     it 'returns webhooks matching the event' do
       webhooks = described_class.for_partnership_id(partnership.id, 'template.created')
-      expect(webhooks).to include(webhook1)
-      expect(webhooks).not_to include(webhook2)
+      expect(webhooks).to include(webhook)
+      expect(webhooks).not_to include(webhook_update_only)
     end
 
     it 'returns webhooks matching any of multiple events' do
       webhooks = described_class.for_partnership_id(partnership.id, ['template.created', 'template.updated'])
-      expect(webhooks).to include(webhook1, webhook2)
+      expect(webhooks).to include(webhook, webhook_update_only)
     end
 
     it 'does not return webhooks from other partnerships' do
@@ -113,7 +113,7 @@ RSpec.describe WebhookUrls do
 
     it 'handles single event as string' do
       webhooks = described_class.for_partnership_id(partnership.id, 'template.updated')
-      expect(webhooks).to include(webhook1, webhook2)
+      expect(webhooks).to include(webhook, webhook_update_only)
     end
   end
 

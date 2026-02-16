@@ -101,8 +101,10 @@ RSpec.describe SendTemplateCreatedWebhookRequestJob do
       end
 
       it 'sends a webhook request for partnership template' do
-        described_class.new.perform('template_id' => partnership_template.id,
-                                     'webhook_url_id' => partnership_webhook.id)
+        described_class.new.perform(
+          'template_id' => partnership_template.id,
+          'webhook_url_id' => partnership_webhook.id
+        )
 
         expect(WebMock).to have_requested(:post, partnership_webhook.url).with(
           body: {
@@ -119,8 +121,10 @@ RSpec.describe SendTemplateCreatedWebhookRequestJob do
 
       it 'sends a webhook request with the partnership secret' do
         partnership_webhook.update(secret: { 'X-Partnership-Secret' => 'partnership_secret' })
-        described_class.new.perform('template_id' => partnership_template.id,
-                                     'webhook_url_id' => partnership_webhook.id)
+        described_class.new.perform(
+          'template_id' => partnership_template.id,
+          'webhook_url_id' => partnership_webhook.id
+        )
 
         expect(WebMock).to have_requested(:post, partnership_webhook.url).with(
           headers: {
@@ -135,8 +139,10 @@ RSpec.describe SendTemplateCreatedWebhookRequestJob do
         stub_request(:post, partnership_webhook.url).to_return(status: 500)
 
         expect do
-          described_class.new.perform('template_id' => partnership_template.id,
-                                       'webhook_url_id' => partnership_webhook.id)
+          described_class.new.perform(
+            'template_id' => partnership_template.id,
+            'webhook_url_id' => partnership_webhook.id
+          )
         end.to change(described_class.jobs, :size).by(1)
 
         expect(WebMock).to have_requested(:post, partnership_webhook.url).once
