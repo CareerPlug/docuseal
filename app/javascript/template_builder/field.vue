@@ -4,7 +4,8 @@
   >
     <div
       class="border border-base-300 rounded relative group fields-list-item"
-      :style="{ backgroundColor: backgroundColor }"
+      :class="fieldHighlightClasses"
+      :style="{ backgroundColor: backgroundColor, ...fieldHighlightStyles }"
     >
       <div class="flex items-center justify-between relative group/contenteditable-container">
         <div
@@ -277,6 +278,7 @@ import ConditionsModal from './conditions_modal'
 import DescriptionModal from './description_modal'
 import { IconRouteAltLeft, IconMathFunction, IconNewSection, IconTrashX, IconSettings } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
+import { isDefaultFieldName, getDefaultFieldHighlightClasses, getDefaultFieldHighlightStyles } from './default_field_highlight'
 
 export default {
   name: 'TemplateField',
@@ -334,6 +336,15 @@ export default {
     fieldLabels: FieldType.computed.fieldLabels,
     dropdownBgColor () {
       return ['', null, 'transparent'].includes(this.backgroundColor) ? 'white' : this.backgroundColor
+    },
+    isDefaultFieldName () {
+      return isDefaultFieldName(this.field.name || this.defaultName)
+    },
+    fieldHighlightClasses () {
+      return this.isDefaultFieldName ? getDefaultFieldHighlightClasses() : ''
+    },
+    fieldHighlightStyles () {
+      return this.isDefaultFieldName ? getDefaultFieldHighlightStyles() : {}
     },
     schemaAttachmentsIndexes () {
       return (this.template.schema || []).reduce((acc, item, index) => {

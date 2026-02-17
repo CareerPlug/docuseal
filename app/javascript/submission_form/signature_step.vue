@@ -84,6 +84,16 @@
           <IconReload :width="16" />
           {{ t(format === 'upload' ? 'reupload' : 'redraw') }}
         </a>
+        <a
+          href="#"
+          :title="t('preview')"
+          class="btn btn-outline btn-sm font-medium inline md:hidden flex items-center justify-center"
+          @click.prevent="$emit('minimize')"
+        >
+          <IconEye
+            :width="18"
+          />
+        </a>
         <span
           v-if="withQrButton && !modelValue && !computedPreviousValue && format !== 'typed' && format !== 'upload'"
           class=" tooltip"
@@ -101,17 +111,6 @@
             />
           </a>
         </span>
-        <a
-          href="#"
-          :title="t('minimize')"
-          class="py-1.5 inline md:hidden"
-          @click.prevent="$emit('minimize')"
-        >
-          <IconArrowsDiagonalMinimize2
-            :width="20"
-            :height="20"
-          />
-        </a>
       </div>
     </div>
     <div
@@ -290,7 +289,7 @@
 </template>
 
 <script>
-import { IconReload, IconCamera, IconSignature, IconTextSize, IconArrowsDiagonalMinimize2, IconQrcode, IconX } from '@tabler/icons-vue'
+import { IconReload, IconCamera, IconSignature, IconTextSize, IconEye, IconQrcode, IconX } from '@tabler/icons-vue'
 import { cropCanvasAndExportToPNG } from './crop_canvas'
 import { isValidSignatureCanvas } from './validate_signature'
 import SignaturePad from 'signature_pad'
@@ -315,7 +314,7 @@ export default {
     IconX,
     IconTextSize,
     IconSignature,
-    IconArrowsDiagonalMinimize2
+    IconEye
   },
   inject: ['baseUrl', 't'],
   props: {

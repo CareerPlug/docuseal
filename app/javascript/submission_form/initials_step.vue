@@ -88,14 +88,13 @@
           {{ t('clear') }}
         </a>
         <a
-          :title="t('minimize')"
+          :title="t('preview')"
           href="#"
-          class="py-1.5 inline md:hidden"
+          class="btn btn-outline btn-sm font-medium inline md:hidden flex items-center justify-center"
           @click.prevent="$emit('minimize')"
         >
-          <IconArrowsDiagonalMinimize2
-            :width="20"
-            :height="20"
+          <IconEye
+            :width="18"
           />
         </a>
       </div>
@@ -145,7 +144,7 @@
 
 <script>
 import { cropCanvasAndExportToPNG } from './crop_canvas'
-import { IconReload, IconTextSize, IconUpload, IconSignature, IconArrowsDiagonalMinimize2 } from '@tabler/icons-vue'
+import { IconReload, IconTextSize, IconUpload, IconSignature, IconEye } from '@tabler/icons-vue'
 import SignaturePad from 'signature_pad'
 import AppearsOn from './appears_on'
 import MarkdownContent from './markdown_content'
@@ -162,7 +161,7 @@ export default {
     IconTextSize,
     IconSignature,
     MarkdownContent,
-    IconArrowsDiagonalMinimize2
+    IconEye
   },
   inject: ['baseUrl', 't'],
   props: {
