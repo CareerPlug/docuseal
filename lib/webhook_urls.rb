@@ -37,6 +37,11 @@ module WebhookUrls
 
   def event_matcher(events)
     events = Array.wrap(events)
+
+    # Validate against known events constant
+    invalid_events = events - WebhookUrl::EVENTS
+    raise ArgumentError, "Invalid events: #{invalid_events.join(', ')}" if invalid_events.any?
+
     conditions = events.map { 'events LIKE ?' }.join(' OR ')
     values = events.map { |event| "%\"#{event}\"%" }
     [conditions, *values]
