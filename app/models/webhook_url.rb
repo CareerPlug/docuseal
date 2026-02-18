@@ -31,6 +31,7 @@ class WebhookUrl < ApplicationRecord
     form.started
     form.completed
     form.declined
+    form.changes_requested
     submission.created
     submission.completed
     submission.expired
