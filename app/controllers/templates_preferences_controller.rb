@@ -1,6 +1,13 @@
 # frozen_string_literal: true
 
 class TemplatesPreferencesController < ApplicationController
+  include IframeAuthentication
+  include PartnershipContext
+
+  skip_before_action :verify_authenticity_token
+  skip_before_action :authenticate_via_token!
+
+  before_action :authenticate_from_referer
   load_and_authorize_resource :template
 
   def show; end
@@ -8,9 +15,22 @@ class TemplatesPreferencesController < ApplicationController
   def create
     authorize!(:update, @template)
 
+    old_submitters_order = @template.preferences['submitters_order']
     @template.preferences = @template.preferences.merge(template_params[:preferences])
-    @template.preferences = @template.preferences.reject { |_, v| (v.is_a?(String) || v.is_a?(Hash)) && v.blank? }
+    @templahttp://app.lvh.me:3000/retain/team/tasks_list_builder/13/editte.preferences = @template.preferences.reject { |_, v| (v.is_a?(String) || v.is_a?(Hash)) && v.blank? }
+
+    # Handle single_sided case (when template has < 2 unique submitters)
+    if @template.unique_submitter_uuids.size < 2 && @template.preferences['submitters_order'].present?
+      @template.preferences['submitters_order'] = 'single_sided'
+    end
+
     @template.save!
+
+    # Enqueue webhook if submitters_order changed
+    new_submitters_order = @template.preferences['submitters_order']
+    if old_submitters_order != new_submitters_order && new_submitters_order.present?
+      enqueue_template_preferences_updated_webhooks(@template)
+    end
 
     head :ok
   end
@@ -49,6 +69,13 @@ class TemplatesPreferencesController < ApplicationController
           value
         end
       end
+    end
+  end
+
+  def enqueue_template_preferences_updated_webhooks(template)
+    WebhookUrls.for_template(template, 'template.preferences_updated').each do |webhook_url|
+      SendTemplatePreferencesUpdatedWebhookRequestJob.perform_async('template_id' => template.id,
+                                                                    'webhook_url_id' => webhook_url.id)
     end
   end
 end

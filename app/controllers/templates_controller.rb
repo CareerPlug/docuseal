@@ -99,8 +99,10 @@ class TemplatesController < ApplicationController
   end
 
   def update
-    @template.assign_attributes(template_params)
+    # Capture current submitters_order before any changes
+    old_submitters_order = @template.preferences['submitters_order']
 
+    @template.assign_attributes(template_params)
     is_name_changed = @template.name_changed?
 
     @template.save!
@@ -109,7 +111,13 @@ class TemplatesController < ApplicationController
 
     enqueue_template_updated_webhooks(@template)
 
-    head :ok
+    # If submitters_order changed (e.g., fields removed making it single_sided), fire preferences webhook
+    new_submitters_order = @template.preferences['submitters_order']
+    if old_submitters_order != new_submitters_order && new_submitters_order.present?
+      enqueue_template_preferences_updated_webhooks(@template)
+    end
+
+    render json: { preferences: @template.preferences }
   end
 
   def destroy
@@ -170,6 +178,13 @@ class TemplatesController < ApplicationController
     WebhookUrls.for_template(template, 'template.updated').each do |webhook_url|
       SendTemplateUpdatedWebhookRequestJob.perform_async('template_id' => template.id,
                                                          'webhook_url_id' => webhook_url.id)
+    end
+  end
+
+  def enqueue_template_preferences_updated_webhooks(template)
+    WebhookUrls.for_template(template, 'template.preferences_updated').each do |webhook_url|
+      SendTemplatePreferencesUpdatedWebhookRequestJob.perform_async('template_id' => template.id,
+                                                                    'webhook_url_id' => webhook_url.id)
     end
   end
 

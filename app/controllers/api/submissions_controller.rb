@@ -167,7 +167,7 @@ module Api
           template:,
           user: current_user,
           source: :api,
-          submitters_order: params[:submitters_order] || params[:order] || 'preserved',
+          submitters_order: params[:submitters_order] || params[:order] || template.effective_submitters_order,
           submissions_attrs:,
           params:
         )
