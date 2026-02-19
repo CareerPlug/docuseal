@@ -3,7 +3,6 @@
 module Params
   class SubmissionCreateValidator < BaseValidator
     def call
-      binding.pry
       if params[:submission].blank? && (params[:emails].present? || params[:email].present?)
         validate_creation_from_emails(params)
       elsif params.key?(:submitters)
