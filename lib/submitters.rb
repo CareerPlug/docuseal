@@ -164,11 +164,14 @@ module Submitters
 
   def current_submitter_order?(submitter)
     submitter_items = submitter.submission.template_submitters || submitter.submission.template.submitters
+    submitters_order = submitter.submission.template_signing_order
 
-    before_items = submitter_items[0...(submitter_items.find_index { |e| e['uuid'] == submitter.uuid })]
+    ordered_items = submitters_order == 'manager_then_employee' ? submitter_items.reverse : submitter_items
 
-    before_items.reduce(true) do |acc, item|
-      acc && submitter.submission.submitters.find { |e| e.uuid == item['uuid'] }&.completed_at?
+    before_items = ordered_items[0...ordered_items.find_index { |e| e['uuid'] == submitter.uuid }]
+
+    before_items.all? do |item|
+      submitter.submission.submitters.find { |e| e.uuid == item['uuid'] }&.completed_at?
     end
   end
 

@@ -101,7 +101,7 @@ class Submission < ApplicationRecord
   }, scope: false, prefix: true
 
   def signing_order_enforced?
-    template&.preferences&.dig('submitters_order').in?(%w[employee_then_manager manager_then_employee])
+    template_signing_order.in?(%w[employee_then_manager manager_then_employee])
   end
 
   def expired?
@@ -110,6 +110,10 @@ class Submission < ApplicationRecord
 
   def last_completed_submitter
     submitters.where.not(completed_at: nil).order(:completed_at).last
+  end
+
+  def template_signing_order
+    template&.preferences&.dig('submitters_order')
   end
 
   def schema_documents
