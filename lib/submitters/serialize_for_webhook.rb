@@ -4,7 +4,7 @@ module Submitters
   module SerializeForWebhook
     SERIALIZE_PARAMS = {
       methods: %i[status application_key],
-      only: %i[id submission_id email phone name ua ip sent_at opened_at
+      only: %i[id submission_id account_id email phone name ua ip sent_at opened_at
                completed_at declined_at created_at updated_at external_id metadata]
     }.freeze
 

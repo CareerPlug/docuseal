@@ -15,6 +15,8 @@ class SendTemplatePreferencesUpdatedWebhookRequestJob
 
     data = {
       id: template.id,
+      account_id: template.account_id,
+      partnership_id: template.partnership_id,
       external_id: template.external_id,
       application_key: template.application_key,
       submitters_order: template.preferences['submitters_order']
