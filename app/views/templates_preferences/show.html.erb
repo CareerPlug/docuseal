@@ -346,17 +346,16 @@
                 </span>
               </label>
               <div class="space-y-2">
-                <%
-                  first_party = @template.submitters.first['name'] || t('first_party')
+first_party = @template.submitters.first['name'] || t('first_party')
                   second_party = @template.submitters.second&.[]('name') || t('second_party')
                   current_value = ff.object.submitters_order.presence || 'simultaneous'
                 %>
 
                 <label class="flex items-start space-x-3 p-3 border border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
                   <%= ff.radio_button :submitters_order, 'employee_then_manager',
-                      checked: current_value == 'employee_then_manager',
-                      class: 'radio radio-primary mt-0.5',
-                      onchange: 'this.form.requestSubmit()' %>
+                                      checked: current_value == 'employee_then_manager',
+                                      class: 'radio radio-primary mt-0.5',
+                                      onchange: 'this.form.requestSubmit()' %>
                   <div class="flex-1">
                     <div class="font-medium"><%= t('employee_then_manager_title', first_party: first_party, second_party: second_party) %></div>
                     <div class="text-sm text-base-content/70"><%= t('employee_then_manager_description', first_party: first_party, second_party: second_party) %></div>
@@ -365,9 +364,9 @@
 
                 <label class="flex items-start space-x-3 p-3 border border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
                   <%= ff.radio_button :submitters_order, 'manager_then_employee',
-                      checked: current_value == 'manager_then_employee',
-                      class: 'radio radio-primary mt-0.5',
-                      onchange: 'this.form.requestSubmit()' %>
+                                      checked: current_value == 'manager_then_employee',
+                                      class: 'radio radio-primary mt-0.5',
+                                      onchange: 'this.form.requestSubmit()' %>
                   <div class="flex-1">
                     <div class="font-medium"><%= t('manager_then_employee_title', first_party: first_party, second_party: second_party) %></div>
                     <div class="text-sm text-base-content/70"><%= t('manager_then_employee_description', first_party: first_party, second_party: second_party) %></div>
@@ -376,9 +375,9 @@
 
                 <label class="flex items-start space-x-3 p-3 border border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
                   <%= ff.radio_button :submitters_order, 'simultaneous',
-                      checked: current_value == 'simultaneous',
-                      class: 'radio radio-primary mt-0.5',
-                      onchange: 'this.form.requestSubmit()' %>
+                                      checked: current_value == 'simultaneous',
+                                      class: 'radio radio-primary mt-0.5',
+                                      onchange: 'this.form.requestSubmit()' %>
                   <div class="flex-1">
                     <div class="font-medium"><%= t('simultaneous_signing_title') %></div>
                     <div class="text-sm text-base-content/70"><%= t('simultaneous_signing_description') %></div>
