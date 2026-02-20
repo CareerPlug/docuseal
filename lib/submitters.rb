@@ -168,7 +168,7 @@ module Submitters
 
     ordered_items = submitters_order == 'manager_then_employee' ? submitter_items.reverse : submitter_items
 
-    before_items = ordered_items[0...ordered_items.find_index { |e| e['uuid'] == submitter.uuid }]
+    before_items = ordered_items[0...(ordered_items.find_index { |e| e['uuid'] == submitter.uuid })]
 
     before_items.all? do |item|
       submitter.submission.submitters.find { |e| e.uuid == item['uuid'] }&.completed_at?

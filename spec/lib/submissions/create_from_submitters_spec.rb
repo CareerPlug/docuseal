@@ -9,7 +9,7 @@ RSpec.describe Submissions::CreateFromSubmitters do
 
   let(:submitter_attrs) do
     template.submitters.map do |s|
-      HashWithIndifferentAccess.new({ 'uuid' => s['uuid'], 'email' => Faker::Internet.email })
+      { 'uuid' => s['uuid'], 'email' => Faker::Internet.email }.with_indifferent_access
     end
   end
 
@@ -17,7 +17,7 @@ RSpec.describe Submissions::CreateFromSubmitters do
     described_class.call(
       template:,
       user:,
-      submissions_attrs: [HashWithIndifferentAccess.new({ 'submitters' => submitter_attrs })],
+      submissions_attrs: [{ 'submitters' => submitter_attrs }.with_indifferent_access],
       source: :api,
       submitters_order:
     )

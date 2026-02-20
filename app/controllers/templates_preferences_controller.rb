@@ -17,7 +17,7 @@ class TemplatesPreferencesController < ApplicationController
 
     old_submitters_order = @template.preferences['submitters_order']
     @template.preferences = @template.preferences.merge(template_params[:preferences])
-    @templahttp://app.lvh.me:3000/retain/team/tasks_list_builder/13/editte.preferences = @template.preferences.reject { |_, v| (v.is_a?(String) || v.is_a?(Hash)) && v.blank? }
+    @template.preferences = @template.preferences.reject { |_, v| (v.is_a?(String) || v.is_a?(Hash)) && v.blank? }
 
     # Handle single_sided case (when template has < 2 unique submitters)
     if @template.unique_submitter_uuids.size < 2 && @template.preferences['submitters_order'].present?

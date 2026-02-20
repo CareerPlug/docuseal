@@ -15,13 +15,13 @@ RSpec.describe Submitters do
     let!(:employee) { create(:submitter, submission:, uuid: employee_uuid) }
     let!(:manager) { create(:submitter, submission:, uuid: manager_uuid) }
 
-    def set_order(order)
+    def update_order(order)
       template.update_column(:preferences, { 'submitters_order' => order })
       submission.reload
     end
 
     context 'with manager_then_employee order' do
-      before { set_order('manager_then_employee') }
+      before { update_order('manager_then_employee') }
 
       it 'returns true for the manager (index 1)' do
         expect(described_class.current_submitter_order?(manager.reload)).to be true
@@ -39,7 +39,7 @@ RSpec.describe Submitters do
     end
 
     context 'with employee_then_manager order' do
-      before { set_order('employee_then_manager') }
+      before { update_order('employee_then_manager') }
 
       it 'returns true for the first submitter (Employee)' do
         expect(described_class.current_submitter_order?(employee.reload)).to be true

@@ -19,13 +19,13 @@ RSpec.describe Submissions do
       allow(Submitters).to receive(:send_signature_requests)
     end
 
-    def set_order(order)
+    def update_order(order)
       template.update_column(:preferences, { 'submitters_order' => order })
       submission.reload
     end
 
     context 'with employee_then_manager order' do
-      before { set_order('employee_then_manager') }
+      before { update_order('employee_then_manager') }
 
       it 'sends signature request only to the employee first' do
         described_class.send_signature_requests([submission])
@@ -35,7 +35,7 @@ RSpec.describe Submissions do
     end
 
     context 'with manager_then_employee order' do
-      before { set_order('manager_then_employee') }
+      before { update_order('manager_then_employee') }
 
       it 'sends signature request only to the manager first' do
         described_class.send_signature_requests([submission])
@@ -45,12 +45,12 @@ RSpec.describe Submissions do
     end
 
     context 'with simultaneous order' do
-      before { set_order('simultaneous') }
+      before { update_order('simultaneous') }
 
       it 'sends signature requests to all submitters' do
         described_class.send_signature_requests([submission])
 
-        expect(Submitters).to have_received(:send_signature_requests).with(match_array([employee, manager]),
+        expect(Submitters).to have_received(:send_signature_requests).with(contain_exactly(employee, manager),
                                                                            delay_seconds: nil)
       end
     end
