@@ -27,8 +27,8 @@ RSpec.describe SendTemplatePreferencesUpdatedWebhookRequestJob do
           'timestamp' => /.*/,
           'data' => {
             'id' => template.id,
-            'account_id' => template.account_id,
-            'partnership_id' => template.partnership_id,
+            'external_account_id' => template.account&.external_account_id,
+            'external_partnership_id' => template.partnership&.external_partnership_id,
             'external_id' => template.external_id,
             'application_key' => template.application_key,
             'submitters_order' => 'employee_then_manager'
@@ -53,8 +53,8 @@ RSpec.describe SendTemplatePreferencesUpdatedWebhookRequestJob do
           'timestamp' => /.*/,
           'data' => {
             'id' => template.id,
-            'account_id' => template.account_id,
-            'partnership_id' => template.partnership_id,
+            'external_account_id' => template.account&.external_account_id,
+            'external_partnership_id' => template.partnership&.external_partnership_id,
             'external_id' => template.external_id,
             'application_key' => template.application_key,
             'submitters_order' => 'simultaneous'
@@ -114,8 +114,8 @@ RSpec.describe SendTemplatePreferencesUpdatedWebhookRequestJob do
           'timestamp' => /.*/,
           'data' => {
             'id' => template.id,
-            'account_id' => template.account_id,
-            'partnership_id' => template.partnership_id,
+            'external_account_id' => template.account&.external_account_id,
+            'external_partnership_id' => template.partnership&.external_partnership_id,
             'external_id' => template.external_id,
             'application_key' => template.application_key,
             'submitters_order' => 'single_sided'

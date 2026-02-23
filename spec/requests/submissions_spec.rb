@@ -286,6 +286,7 @@ describe 'Submission API' do
     {
       id: submission.id,
       account_id: submission.account_id,
+      external_account_id: submission.account&.external_account_id,
       name: submission.name,
       source: 'link',
       submitters_order: 'employee_then_manager',
@@ -346,6 +347,7 @@ describe 'Submission API' do
     {
       id: submission.id,
       account_id: submission.account_id,
+      external_account_id: submission.account&.external_account_id,
       name: submission.name,
       source: 'link',
       status: 'pending',

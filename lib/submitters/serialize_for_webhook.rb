@@ -13,7 +13,7 @@ module Submitters
     def call(submitter)
       ActiveRecord::Associations::Preloader.new(
         records: [submitter],
-        associations: [documents_attachments: :blob, attachments_attachments: :blob]
+        associations: [:account, { documents_attachments: :blob, attachments_attachments: :blob }]
       ).call
 
       values = build_values_array(submitter)
@@ -26,7 +26,8 @@ module Submitters
         submitter.declined_at? ? submitter.submission_events.find_by(event_type: :decline_form).data['reason'] : nil
 
       submitter.as_json(SERIALIZE_PARAMS)
-               .merge('decline_reason' => decline_reason,
+               .merge('external_account_id' => submitter.account&.external_account_id,
+                      'decline_reason' => decline_reason,
                       'role' => submitter_name,
                       'preferences' => submitter.preferences.except('default_values'),
                       'values' => values,
