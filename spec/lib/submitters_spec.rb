@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe Submitters do
-  describe '.current_submitter_order?' do
+  describe '.current_submitter_order' do
     let(:account) { create(:account) }
     let(:user) { create(:user, account:) }
     let(:template) { create(:template, account:, author: user, submitter_count: 2) }
@@ -24,17 +24,17 @@ RSpec.describe Submitters do
       before { update_order('manager_then_employee') }
 
       it 'returns true for the manager (index 1)' do
-        expect(described_class.current_submitter_order?(manager.reload)).to be true
+        expect(described_class.current_submitter_order(manager.reload)).to be true
       end
 
       it 'returns false for the employee when manager has not completed' do
         manager.update!(completed_at: nil)
-        expect(described_class.current_submitter_order?(employee.reload)).to be false
+        expect(described_class.current_submitter_order(employee.reload)).to be false
       end
 
       it 'returns true for the employee when manager has completed' do
         manager.update!(completed_at: Time.current)
-        expect(described_class.current_submitter_order?(employee.reload)).to be true
+        expect(described_class.current_submitter_order(employee.reload)).to be true
       end
     end
 
@@ -42,17 +42,17 @@ RSpec.describe Submitters do
       before { update_order('employee_then_manager') }
 
       it 'returns true for the first submitter (Employee)' do
-        expect(described_class.current_submitter_order?(employee.reload)).to be true
+        expect(described_class.current_submitter_order(employee.reload)).to be true
       end
 
       it 'returns false for the manager when employee has not completed' do
         employee.update!(completed_at: nil)
-        expect(described_class.current_submitter_order?(manager.reload)).to be false
+        expect(described_class.current_submitter_order(manager.reload)).to be false
       end
 
       it 'returns true for the manager when employee has completed' do
         employee.update!(completed_at: Time.current)
-        expect(described_class.current_submitter_order?(manager.reload)).to be true
+        expect(described_class.current_submitter_order(manager.reload)).to be true
       end
     end
 
@@ -60,17 +60,17 @@ RSpec.describe Submitters do
       before { update_order('simultaneous') }
 
       it 'returns true for the first submitter' do
-        expect(described_class.current_submitter_order?(employee.reload)).to be true
+        expect(described_class.current_submitter_order(employee.reload)).to be true
       end
 
       it 'returns true for the second submitter when the first has completed' do
         employee.update!(completed_at: Time.current)
-        expect(described_class.current_submitter_order?(manager.reload)).to be true
+        expect(described_class.current_submitter_order(manager.reload)).to be true
       end
 
       it 'returns false for the second submitter when the first has not completed' do
         employee.update!(completed_at: nil)
-        expect(described_class.current_submitter_order?(manager.reload)).to be false
+        expect(described_class.current_submitter_order(manager.reload)).to be false
       end
     end
 
@@ -78,17 +78,17 @@ RSpec.describe Submitters do
       before { update_order('single_sided') }
 
       it 'returns true for the first submitter' do
-        expect(described_class.current_submitter_order?(employee.reload)).to be true
+        expect(described_class.current_submitter_order(employee.reload)).to be true
       end
 
       it 'returns true for the second submitter when the first has completed' do
         employee.update!(completed_at: Time.current)
-        expect(described_class.current_submitter_order?(manager.reload)).to be true
+        expect(described_class.current_submitter_order(manager.reload)).to be true
       end
 
       it 'returns false for the second submitter when the first has not completed' do
         employee.update!(completed_at: nil)
-        expect(described_class.current_submitter_order?(manager.reload)).to be false
+        expect(described_class.current_submitter_order(manager.reload)).to be false
       end
     end
   end

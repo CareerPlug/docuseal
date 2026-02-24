@@ -22,7 +22,7 @@ class SubmitFormController < ApplicationController
 
     if @form_configs[:enforce_signing_order] ||
        submission.template_signing_order.in?(%w[employee_then_manager manager_then_employee])
-      signing_order = Submitters.current_submitter_order?(@submitter)
+      signing_order = Submitters.current_submitter_order(@submitter)
 
       if signing_order.nil?
         flash.now[:alert] = I18n.t('user_id_did_not_match_please_try_again_or_contact_support')

@@ -162,7 +162,7 @@ module Submitters
     end
   end
 
-  def current_submitter_order?(submitter)
+  def current_submitter_order(submitter)
     submitter_items = submitter.submission.template_submitters || submitter.submission.template.submitters
     submitters_order = submitter.submission.template_signing_order
 
