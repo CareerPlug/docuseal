@@ -53,7 +53,7 @@ class Submission < ApplicationRecord
   serialize :preferences, coder: JSON
 
   attribute :source, :string, default: 'link'
-  attribute :submitters_order, :string, default: 'employee_then_manager'
+  attribute :submitters_order, :string, default: 'single_sided'
 
   attribute :slug, :string, default: -> { SecureRandom.base58(14) }
 

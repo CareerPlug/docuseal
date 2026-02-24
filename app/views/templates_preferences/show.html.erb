@@ -346,7 +346,8 @@
                 </span>
               </label>
               <div class="space-y-2">
-first_party = @template.submitters.first['name'] || t('first_party')
+                <%
+                  first_party = @template.submitters.first&.[]('name') || t('first_party')
                   second_party = @template.submitters.second&.[]('name') || t('second_party')
                   current_value = ff.object.submitters_order.presence || 'simultaneous'
                 %>

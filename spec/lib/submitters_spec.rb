@@ -55,5 +55,41 @@ RSpec.describe Submitters do
         expect(described_class.current_submitter_order?(manager.reload)).to be true
       end
     end
+
+    context 'with simultaneous order' do
+      before { update_order('simultaneous') }
+
+      it 'returns true for the first submitter' do
+        expect(described_class.current_submitter_order?(employee.reload)).to be true
+      end
+
+      it 'returns true for the second submitter when the first has completed' do
+        employee.update!(completed_at: Time.current)
+        expect(described_class.current_submitter_order?(manager.reload)).to be true
+      end
+
+      it 'returns false for the second submitter when the first has not completed' do
+        employee.update!(completed_at: nil)
+        expect(described_class.current_submitter_order?(manager.reload)).to be false
+      end
+    end
+
+    context 'with single_sided order' do
+      before { update_order('single_sided') }
+
+      it 'returns true for the first submitter' do
+        expect(described_class.current_submitter_order?(employee.reload)).to be true
+      end
+
+      it 'returns true for the second submitter when the first has completed' do
+        employee.update!(completed_at: Time.current)
+        expect(described_class.current_submitter_order?(manager.reload)).to be true
+      end
+
+      it 'returns false for the second submitter when the first has not completed' do
+        employee.update!(completed_at: nil)
+        expect(described_class.current_submitter_order?(manager.reload)).to be false
+      end
+    end
   end
 end

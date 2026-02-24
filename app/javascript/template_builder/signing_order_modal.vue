@@ -115,7 +115,7 @@ export default {
         this.$emit('close')
       }).catch((error) => {
         console.error('Error saving signing order:', error)
-        alert(this.t('error_occurred'))
+        alert(this.t('failed_to_save_signing_order_please_try_again_or_contact_support'))
       })
     }
   }

@@ -4,6 +4,7 @@ class TemplatesController < ApplicationController
   include PrefillFieldsHelper
   include IframeAuthentication
   include PartnershipContext
+  include TemplateWebhooks
 
   skip_before_action :verify_authenticity_token
   skip_before_action :authenticate_via_token!, only: [:update]
@@ -164,27 +165,6 @@ class TemplatesController < ApplicationController
       redirect_to(edit_template_path(@template))
     else
       redirect_back(fallback_location: root_path, notice: I18n.t('template_has_been_cloned'))
-    end
-  end
-
-  def enqueue_template_created_webhooks(template)
-    WebhookUrls.for_template(template, 'template.created').each do |webhook_url|
-      SendTemplateCreatedWebhookRequestJob.perform_async('template_id' => template.id,
-                                                         'webhook_url_id' => webhook_url.id)
-    end
-  end
-
-  def enqueue_template_updated_webhooks(template)
-    WebhookUrls.for_template(template, 'template.updated').each do |webhook_url|
-      SendTemplateUpdatedWebhookRequestJob.perform_async('template_id' => template.id,
-                                                         'webhook_url_id' => webhook_url.id)
-    end
-  end
-
-  def enqueue_template_preferences_updated_webhooks(template)
-    WebhookUrls.for_template(template, 'template.preferences_updated').each do |webhook_url|
-      SendTemplatePreferencesUpdatedWebhookRequestJob.perform_async('template_id' => template.id,
-                                                                    'webhook_url_id' => webhook_url.id)
     end
   end
 

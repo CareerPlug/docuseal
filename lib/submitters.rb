@@ -167,8 +167,14 @@ module Submitters
     submitters_order = submitter.submission.template_signing_order
 
     ordered_items = submitters_order == 'manager_then_employee' ? submitter_items.reverse : submitter_items
+    index = ordered_items.find_index { |e| e['uuid'] == submitter.uuid }
 
-    before_items = ordered_items[0...(ordered_items.find_index { |e| e['uuid'] == submitter.uuid })]
+    if index.nil?
+      Rails.logger.error("Submitter UUID #{submitter.uuid} not found in submission #{submitter.submission_id}")
+      return nil
+    end
+
+    before_items = ordered_items[0...index]
 
     before_items.all? do |item|
       submitter.submission.submitters.find { |e| e.uuid == item['uuid'] }&.completed_at?

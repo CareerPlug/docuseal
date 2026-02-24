@@ -3,7 +3,11 @@
 class TemplatesPreferencesController < ApplicationController
   include IframeAuthentication
   include PartnershipContext
+  include TemplateWebhooks
 
+  # We use IframeAuthentication#authenticate_from_referer to authenticate the user.
+  # These are holdovers from legacy Docuseal that uses an actual login system
+  # and will be removed in a future ticket.
   skip_before_action :verify_authenticity_token
   skip_before_action :authenticate_via_token!
 
@@ -69,13 +73,6 @@ class TemplatesPreferencesController < ApplicationController
           value
         end
       end
-    end
-  end
-
-  def enqueue_template_preferences_updated_webhooks(template)
-    WebhookUrls.for_template(template, 'template.preferences_updated').each do |webhook_url|
-      SendTemplatePreferencesUpdatedWebhookRequestJob.perform_async('template_id' => template.id,
-                                                                    'webhook_url_id' => webhook_url.id)
     end
   end
 end

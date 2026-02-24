@@ -82,6 +82,7 @@ const en = {
   signing_order: 'Signing Order',
   select_signing_order: 'Select Signing Order',
   simultaneous_signing_description: 'Both parties may complete the form at the same time',
+  failed_to_save_signing_order_please_try_again_or_contact_support: 'Failed to save signing order. Please try again or contact support for assistance.',
   draw: 'Draw',
   add: 'Add',
   or_add_field_without_drawing: 'Or add field without drawing',
