@@ -346,11 +346,9 @@
                 </span>
               </label>
               <div class="space-y-2">
-                <%
-                  first_party = @template.submitters.first&.[]('name') || t('first_party')
-                  second_party = @template.submitters.second&.[]('name') || t('second_party')
-                  current_value = ff.object.submitters_order.presence || 'simultaneous'
-                %>
+                <% first_party = @template.submitters.first&.[]('name') || t('first_party')
+                   second_party = @template.submitters.second&.[]('name') || t('second_party')
+                   current_value = ff.object.submitters_order.presence || 'simultaneous' %>
 
                 <label class="flex items-start space-x-3 p-3 border border-base-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
                   <%= ff.radio_button :submitters_order, 'employee_then_manager',
