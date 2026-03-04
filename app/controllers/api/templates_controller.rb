@@ -210,7 +210,7 @@ module Api
       return if audience.blank?
 
       unless audience.in?(VALID_AUDIENCE_VALUES)
-        Rails.logger.warn("Invalid audience value '#{audience}' for template #{template.id}. Valid values: #{VALID_AUDIENCE_VALUES.join(', ')}")
+        Rails.logger.warn("Invalid audience value '#{audience}' for template #{template.id}.")
         return
       end
 
