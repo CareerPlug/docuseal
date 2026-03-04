@@ -208,7 +208,11 @@ module Api
 
     def apply_audience(template, audience)
       return if audience.blank?
-      return unless audience.in?(VALID_AUDIENCE_VALUES)
+
+      unless audience.in?(VALID_AUDIENCE_VALUES)
+        Rails.logger.warn("Invalid audience value '#{audience}' for template #{template.id}. Valid values: #{VALID_AUDIENCE_VALUES.join(', ')}")
+        return
+      end
 
       template.update!(preferences: template.preferences.merge('submitters_order' => audience))
     end
