@@ -27,14 +27,55 @@ describe 'API Submitters Request Changes' do
         expect(response).to have_http_status(:ok)
       end
 
-      it 'is idempotent when changes already requested' do
-        submitter.update!(changes_requested_at: 1.hour.ago)
-
+      it 'creates a submission event' do
         expect do
           post "/api/submitters/#{submitter.slug}/request_changes",
                headers: { 'x-auth-token': user.access_token.token }
-        end.not_to(change { submitter.reload.changes_requested_at })
+        end.to change(SubmissionEvent, :count).by(1)
 
+        event = SubmissionEvent.last
+        expect(event.event_type).to eq('request_changes')
+        expect(event.submitter).to eq(submitter)
+      end
+
+      it 'records the reason in the submission event when provided' do
+        expect do
+          post "/api/submitters/#{submitter.slug}/request_changes",
+               params: { reason: 'Missing signature on page 2' }.to_json,
+               headers: { 'x-auth-token': user.access_token.token }
+        end.to change(SubmissionEvent, :count).by(1)
+
+        expect(SubmissionEvent.last.data).to include('reason' => 'Missing signature on page 2')
+      end
+
+      context 'when submitter has not completed the form' do
+        let(:submitter) do
+          create(
+            :submitter,
+            submission:,
+            account:,
+            completed_at: nil,
+            uuid: template.submitters.first['uuid']
+          )
+        end
+
+        it 'returns unprocessable entity' do
+          post "/api/submitters/#{submitter.slug}/request_changes",
+               headers: { 'x-auth-token': user.access_token.token }
+
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+      end
+
+      it 'is idempotent when changes already requested' do
+        submitter.update!(changes_requested_at: 1.hour.ago)
+        original_changes_requested_at = submitter.changes_requested_at
+
+        post "/api/submitters/#{submitter.slug}/request_changes",
+             headers: { 'x-auth-token': user.access_token.token }
+
+        expect(submitter.reload.changes_requested_at).to eq(original_changes_requested_at)
+        expect(SubmissionEvent.count).to eq(0)
         expect(response).to have_http_status(:ok)
       end
     end
