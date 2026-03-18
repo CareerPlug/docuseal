@@ -5,10 +5,12 @@
 # Table name: submissions
 #
 #  id                  :bigint           not null, primary key
+#  approved_at         :datetime
 #  archived_at         :datetime
 #  expire_at           :datetime
 #  name                :text
 #  preferences         :text             not null
+#  requires_approval   :boolean          default(FALSE), not null
 #  slug                :string           not null
 #  source              :string           not null
 #  submitters_order    :string           not null
