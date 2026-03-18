@@ -17,6 +17,19 @@ describe 'API Submitters Request Changes' do
 
   describe 'POST /api/submitters/:slug/request_changes' do
     context 'when authenticated with a valid token' do
+      it 'clears completed_at, sets changes_requested_at, and clears approved_at' do
+        submission.update!(approved_at: 1.hour.ago)
+
+        expect do
+          post "/api/submitters/#{submitter.slug}/request_changes",
+               headers: { 'x-auth-token': user.access_token.token }
+        end.to change { submitter.reload.changes_requested_at }.from(nil)
+           .and change { submitter.reload.completed_at }.to(nil)
+           .and change { submission.reload.approved_at }.to(nil)
+
+        expect(response).to have_http_status(:ok)
+      end
+
       it 'clears completed_at and sets changes_requested_at' do
         expect do
           post "/api/submitters/#{submitter.slug}/request_changes",

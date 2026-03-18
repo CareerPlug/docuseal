@@ -37,6 +37,7 @@ Rails.application.routes.draw do
     resources :submitters, only: [], param: :slug do
       member do
         post :request_changes, controller: 'submitters_request_changes'
+        post :approve, controller: 'submitters_approve'
       end
     end
     resources :submissions, only: %i[index show create destroy] do
