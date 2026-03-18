@@ -23,6 +23,7 @@ module Submissions
                                               preferences: set_submission_preferences,
                                               name: with_template ? attrs[:name] : (attrs[:name] || template.name),
                                               expire_at:,
+                                              requires_approval: params[:requires_approval],
                                               template_submitters: [], submitters_order:)
 
         template_submitters = template.submitters.deep_dup

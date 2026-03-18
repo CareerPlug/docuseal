@@ -51,6 +51,33 @@ RSpec.describe Submissions::CreateFromSubmitters do
     end
   end
 
+  describe 'requires_approval' do
+    it 'persists requires_approval from params onto the submission' do
+      submissions = described_class.call(
+        template:,
+        user:,
+        submissions_attrs: [{ 'submitters' => submitter_attrs }.with_indifferent_access],
+        source: :api,
+        submitters_order: 'simultaneous',
+        params: { requires_approval: true }
+      )
+
+      expect(submissions.first.requires_approval).to be(true)
+    end
+
+    it 'defaults requires_approval to false when not provided' do
+      submissions = described_class.call(
+        template:,
+        user:,
+        submissions_attrs: [{ 'submitters' => submitter_attrs }.with_indifferent_access],
+        source: :api,
+        submitters_order: 'simultaneous'
+      )
+
+      expect(submissions.first.requires_approval).to be(false)
+    end
+  end
+
   describe 'single_sided skipping' do
     before do
       manager_uuid = template.submitters[1]['uuid']

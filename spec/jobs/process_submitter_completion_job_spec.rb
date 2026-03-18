@@ -46,6 +46,22 @@ RSpec.describe ProcessSubmitterCompletionJob do
       end.to raise_error(ActiveRecord::RecordNotFound)
     end
 
+    context 'when submission requires approval' do
+      let(:webhook) { create(:webhook_url, account:, events: ['submission.completed']) }
+      let(:submission) { create(:submission, template:, created_by_user: user, requires_approval: true) }
+
+      before do
+        webhook
+        submission.submitters.update_all(completed_at: Time.current)
+      end
+
+      it 'does not enqueue submission.completed webhook' do
+        expect do
+          described_class.new.perform('submitter_id' => submitter.id)
+        end.not_to change(SendSubmissionCompletedWebhookRequestJob.jobs, :size)
+      end
+    end
+
     context 'when all submitters are completed' do
       let(:submitter2) { create(:submitter, submission:, uuid: SecureRandom.uuid, completed_at: Time.current) }
 
