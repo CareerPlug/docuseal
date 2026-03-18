@@ -136,8 +136,8 @@ class Submitter < ApplicationRecord
   end
 
   def export_submission_on_status_change
-    status_fields = %w[completed_at declined_at opened_at sent_at]
-    return unless saved_changes.keys.intersect?(status_fields)
+    # status_fields = %w[completed_at declined_at opened_at sent_at]
+    # return unless saved_changes.keys.intersect?(status_fields)
 
     # CP-12761: Disabled - migrating to webhooks. Remove when ATS /api/docuseal/submissions endpoint is cleaned up.
     # ExportSubmissionService.new(submission).call
