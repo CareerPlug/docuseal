@@ -139,7 +139,8 @@ class Submitter < ApplicationRecord
     status_fields = %w[completed_at declined_at opened_at sent_at]
     return unless saved_changes.keys.intersect?(status_fields)
 
-    ExportSubmissionService.new(submission).call
+    # CP-12761: Disabled - migrating to webhooks. Remove when ATS /api/docuseal/submissions endpoint is cleaned up.
+    # ExportSubmissionService.new(submission).call
   rescue StandardError => e
     Rails.logger.error("Failed to export submission on status change: #{e.message}")
   end
