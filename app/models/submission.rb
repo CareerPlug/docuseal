@@ -5,10 +5,12 @@
 # Table name: submissions
 #
 #  id                  :bigint           not null, primary key
+#  approved_at         :datetime
 #  archived_at         :datetime
 #  expire_at           :datetime
 #  name                :text
 #  preferences         :text             not null
+#  requires_approval   :boolean          default(FALSE), not null
 #  slug                :string           not null
 #  source              :string           not null
 #  submitters_order    :string           not null
@@ -26,6 +28,7 @@
 #  index_submissions_on_account_id_and_id                           (account_id,id)
 #  index_submissions_on_account_id_and_template_id_and_id           (account_id,template_id,id) WHERE (archived_at IS NULL)
 #  index_submissions_on_account_id_and_template_id_and_id_archived  (account_id,template_id,id) WHERE (archived_at IS NOT NULL)
+#  index_submissions_on_approved_at                                 (approved_at)
 #  index_submissions_on_created_by_user_id                          (created_by_user_id)
 #  index_submissions_on_slug                                        (slug) UNIQUE
 #  index_submissions_on_template_id                                 (template_id)

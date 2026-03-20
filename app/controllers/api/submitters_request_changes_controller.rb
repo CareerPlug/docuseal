@@ -12,6 +12,7 @@ module Api
       unless @submitter.changes_requested_at?
         ApplicationRecord.transaction do
           @submitter.update!(changes_requested_at: Time.current, completed_at: nil)
+          @submitter.submission.update!(approved_at: nil)
 
           SubmissionEvents.create_with_tracking_data(
             @submitter,

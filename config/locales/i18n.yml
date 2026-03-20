@@ -783,6 +783,7 @@ en: &en
     view_form_by_html: '<b>Form viewed</b> by %{submitter_name}'
     invite_party_by_html: '<b>Invited</b> %{invited_submitter_name} by %{submitter_name}'
     complete_form_by_html: '<b>Submission completed</b> by %{submitter_name}'
+    form_update_by_html: '<b>Form updated</b> by %{submitter_name}'
     request_changes_by_html: '<b>Changes requested</b> for %{submitter_name}'
     start_verification_by_html: '<b>Identity verification started</b> by %{submitter_name}'
     complete_verification_by_html: '<b>Identity verification completed</b> by %{submitter_name} with %{provider}'
@@ -1626,6 +1627,7 @@ es: &es
     view_form_by_html: '<b>Formulario visto</b> por %{submitter_name}'
     invite_party_by_html: '<b>Invitado</b> %{invited_submitter_name} por %{submitter_name}'
     complete_form_by_html: '<b>Envío completado</b> por %{submitter_name}'
+    form_update_by_html: '<b>Formulario actualizado</b> por %{submitter_name}'
     request_changes_by_html: '<b>Cambios solicitados</b> para %{submitter_name}'
     api_complete_form_by_html: '<b>Envío completado vía API</b> por %{submitter_name}'
     start_verification_by_html: '<b>Verificación de identidad iniciada</b> por %{submitter_name}'
@@ -2461,6 +2463,7 @@ it: &it
     view_form_by_html: '<b>Modulo visualizzato</b> da %{submitter_name}'
     invite_party_by_html: '<b>Invitato</b> %{invited_submitter_name} da %{submitter_name}'
     complete_form_by_html: '<b>Invio completato</b> da %{submitter_name}'
+    form_update_by_html: '<b>Modulo aggiornato</b> da %{submitter_name}'
     api_complete_form_by_html: '<b>Invio completato tramite API</b> da %{submitter_name}'
     start_verification_by_html: "<b>Verifica dell'identità iniziata</b> da %{submitter_name}"
     complete_verification_by_html: "<b>Verifica dell'identità completata</b> da %{submitter_name} con %{provider}"
@@ -3298,6 +3301,7 @@ fr: &fr
     view_form_by_html: '<b>Formulaire consulté</b> par %{submitter_name}'
     invite_party_by_html: '<b>Invité</b> %{invited_submitter_name} par %{submitter_name}'
     complete_form_by_html: '<b>Soumission terminée</b> par %{submitter_name}'
+    form_update_by_html: '<b>Formulaire mis à jour</b> par %{submitter_name}'
     start_verification_by_html: "<b>Vérification d'identité commencée</b> par %{submitter_name}"
     complete_verification_by_html: "<b>Vérification d'identité terminée</b> par %{submitter_name} avec %{provider}"
     api_complete_form_by_html: "<b>Soumission terminée via l'API</b> par %{submitter_name}"
@@ -4134,6 +4138,7 @@ pt: &pt
     view_form_by_html: '<b>Formulário visualizado</b> por %{submitter_name}'
     invite_party_by_html: '<b>Convidado</b> %{invited_submitter_name} por %{submitter_name}'
     complete_form_by_html: '<b>Submissão concluída</b> por %{submitter_name}'
+    form_update_by_html: '<b>Formulário atualizado</b> por %{submitter_name}'
     start_verification_by_html: '<b>Verificação de identidade iniciada</b> por %{submitter_name}'
     complete_verification_by_html: '<b>Verificação de identidade concluída</b> por %{submitter_name} com %{provider}'
     api_complete_form_by_html: '<b>Submissão concluída via API</b> por %{submitter_name}'
@@ -4971,6 +4976,7 @@ de: &de
     view_form_by_html: '<b>Formular angesehen</b> von %{submitter_name}'
     invite_party_by_html: '<b>Eingeladen</b> %{invited_submitter_name} von %{submitter_name}'
     complete_form_by_html: '<b>Einreichung abgeschlossen</b> von %{submitter_name}'
+    form_update_by_html: '<b>Formular aktualisiert</b> von %{submitter_name}'
     start_verification_by_html: '<b>Identitätsüberprüfung gestartet</b> von %{submitter_name}'
     complete_verification_by_html: '<b>Identitätsüberprüfung abgeschlossen</b> von %{submitter_name} mit %{provider}'
     api_complete_form_by_html: '<b>Einreichung über API abgeschlossen</b> von %{submitter_name}'

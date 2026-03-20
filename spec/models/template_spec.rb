@@ -1,5 +1,46 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: templates
+#
+#  id                   :bigint           not null, primary key
+#  archived_at          :datetime
+#  external_data_fields :text
+#  fields               :text             not null
+#  name                 :string           not null
+#  preferences          :text             not null
+#  schema               :text             not null
+#  shared_link          :boolean          default(FALSE), not null
+#  slug                 :string           not null
+#  source               :text             not null
+#  submitters           :text             not null
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  account_id           :integer
+#  author_id            :integer          not null
+#  external_id          :string
+#  folder_id            :integer          not null
+#  partnership_id       :bigint
+#
+# Indexes
+#
+#  index_templates_on_account_id                       (account_id)
+#  index_templates_on_account_id_and_folder_id_and_id  (account_id,folder_id,id) WHERE (archived_at IS NULL)
+#  index_templates_on_account_id_and_id_archived       (account_id,id) WHERE (archived_at IS NOT NULL)
+#  index_templates_on_author_id                        (author_id)
+#  index_templates_on_external_id                      (external_id)
+#  index_templates_on_folder_id                        (folder_id)
+#  index_templates_on_partnership_id                   (partnership_id)
+#  index_templates_on_slug                             (slug) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (author_id => users.id)
+#  fk_rails_...  (folder_id => template_folders.id)
+#  fk_rails_...  (partnership_id => partnerships.id)
+#
 RSpec.describe Template do
   let(:account) { create(:account) }
   let(:user) { create(:user, account:) }

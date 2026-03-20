@@ -78,10 +78,10 @@ RSpec.describe Account do
 
         expect(webhook).to be_present
         expect(webhook.events).to match_array(%w[
-                                                form.viewed
                                                 form.started
                                                 form.completed
-                                                form.declined
+                                                submission.completed
+                                                form.changes_requested
                                                 template.preferences_updated
                                               ])
       end

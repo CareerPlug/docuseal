@@ -33,7 +33,8 @@ namespace :webhooks do
     url = 'http://localhost:3000/api/docuseal/events'
     secret = { 'X-CareerPlug-Secret' => 'development_webhook_secret' }
     sha1 = Digest::SHA1.hexdigest(url)
-    account_events = %w[form.viewed form.started form.completed form.declined template.preferences_updated]
+    account_events = %w[form.started form.completed submission.completed
+                        form.changes_requested template.preferences_updated]
     partnership_events = %w[template.preferences_updated]
 
     created = 0
@@ -70,5 +71,25 @@ namespace :webhooks do
     end
 
     puts "Done: #{created} created, #{updated} updated"
+  end
+
+  desc 'Backfill account webhook URLs to include required ATS events'
+  task backfill_account_events: :environment do
+    required_events = %w[form.started form.completed submission.completed
+                         form.changes_requested template.preferences_updated]
+
+    updated = 0
+
+    WebhookUrl.where(partnership_id: nil).find_each do |webhook_url|
+      missing = required_events - webhook_url.events
+
+      next if missing.empty?
+
+      webhook_url.update!(events: (webhook_url.events + missing).uniq)
+      updated += 1
+      puts "Updated account_id=#{webhook_url.account_id} id=#{webhook_url.id}: added #{missing.join(', ')}"
+    end
+
+    puts "Done: #{updated} webhook URL(s) updated"
   end
 end

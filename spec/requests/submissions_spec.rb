@@ -285,6 +285,7 @@ describe 'Submission API' do
 
     {
       id: submission.id,
+      submission_id: submission.id,
       account_id: submission.account_id,
       external_account_id: submission.account&.external_account_id,
       name: submission.name,
@@ -346,6 +347,7 @@ describe 'Submission API' do
 
     {
       id: submission.id,
+      submission_id: submission.id,
       account_id: submission.account_id,
       external_account_id: submission.account&.external_account_id,
       name: submission.name,

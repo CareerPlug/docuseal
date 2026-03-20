@@ -24,6 +24,7 @@ module Submissions
 
       json = submission.as_json(SERIALIZE_PARAMS)
 
+      json['submission_id'] = submission.id
       json['external_account_id'] = submission.account&.external_account_id
       json['created_by_user'] ||= nil
 

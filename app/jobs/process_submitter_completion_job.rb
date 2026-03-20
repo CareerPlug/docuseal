@@ -80,10 +80,11 @@ class ProcessSubmitterCompletionJob
                                                          'webhook_url_id' => webhook.id)
       end
 
-      if webhook.events.include?('submission.completed') && is_all_completed
-        SendSubmissionCompletedWebhookRequestJob.perform_async('submission_id' => submitter.submission_id,
-                                                               'webhook_url_id' => webhook.id)
-      end
+      next unless webhook.events.include?('submission.completed') && is_all_completed &&
+                  !submitter.submission.requires_approval?
+
+      SendSubmissionCompletedWebhookRequestJob.perform_async('submission_id' => submitter.submission_id,
+                                                             'webhook_url_id' => webhook.id)
     end
   end
 
