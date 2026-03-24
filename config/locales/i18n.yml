@@ -130,6 +130,8 @@ en: &en
   you_have_been_invited_to_submit_a_form: You have been invited to submit a form
   signed_on_time: 'Signed on %{time}'
   completed_on_time: 'Completed on %{time}'
+  submitted_on_time: 'Submitted on %{time}'
+  awaiting_manager_approval: 'Awaiting manager approval'
   document_has_been_signed_already: Document has been signed already
   form_has_been_submitted_already: Form has been submitted already
   send_copy_to_email: Send copy to Email
