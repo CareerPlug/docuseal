@@ -7,10 +7,14 @@
             <%= svg_icon('writing_sign', class: 'w-10 h-10') %>
           </div>
           <div>
-            <p dir="auto" class="text-lg font-bold mb-1"><%= @submitter.submission.name || @submitter.submission.template.name %></p>
-            <p dir="auto" class="text-sm">
-              <%= t(@submitter.with_signature_fields? ? 'signed_on_time' : 'completed_on_time', time: l(@submitter.completed_at.to_date, format: :long)) %>
-            </p>
+            <% if @submitter.submission.requires_approval? && @submitter.submission.approved_at.nil? %>
+              <p dir="auto" class="text-sm font-bold mb-1"><%= t('submitted_on_time', time: l(@submitter.completed_at.to_date, format: :long)) %></p>
+              <p dir="auto" class="text-sm"><%= t('awaiting_manager_approval') %></p>
+            <% else %>
+              <p dir="auto" class="text-sm">
+                <%= t(@submitter.with_signature_fields? ? 'signed_on_time' : 'completed_on_time', time: l(@submitter.completed_at.to_date, format: :long)) %>
+              </p>
+            <% end %>
           </div>
         </div>
       </div>
@@ -19,3 +23,4 @@
     </div>
   </div>
 </div>
+<%= render 'shared/attribution', link_path: '/start', account: @submitter.account %>
