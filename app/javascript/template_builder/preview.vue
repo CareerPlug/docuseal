@@ -6,7 +6,6 @@
         :width="previewImage.metadata.width"
         :height="previewImage.metadata.height"
         class="rounded border"
-        loading="lazy"
       >
       <div
         class="group flex justify-end cursor-pointer top-0 bottom-0 left-0 right-0 absolute p-1 hover:bg-black/10 transition-colors"

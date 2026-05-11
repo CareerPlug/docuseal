@@ -113,26 +113,13 @@ export default {
     }
   },
   computed: {
-    basePreviewUrl () {
-      if (this.baseUrl) {
-        return new URL(this.baseUrl).origin
-      } else {
-        return ''
-      }
-    },
     numberOfPages () {
       return this.document.metadata?.pdf?.number_of_pages || this.document.preview_images.length
     },
     sortedPreviewImages () {
-      const lazyloadMetadata = this.document.preview_images[this.document.preview_images.length - 1].metadata
-
-      return [...Array(this.numberOfPages).keys()].map((i) => {
-        return this.previewImagesIndex[i] || {
-          metadata: lazyloadMetadata,
-          id: Math.random().toString(),
-          url: this.basePreviewUrl + `/preview/${this.document.signed_uuid || this.document.uuid}/${i}.jpg`
-        }
-      })
+      return [...Array(this.numberOfPages).keys()]
+        .map((i) => this.previewImagesIndex[i])
+        .filter(Boolean)
     },
     previewImagesIndex () {
       return this.document.preview_images.reduce((acc, e) => {
