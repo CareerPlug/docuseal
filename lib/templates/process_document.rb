@@ -204,7 +204,7 @@ module Templates
     def generate_pdf_preview_from_file(attachment, file_path, page_number)
       doc = Pdfium::Document.open_file(file_path)
 
-      blob = build_and_upload_blob(doc, page_number, '.jpeg')
+      blob = build_and_upload_blob(doc, page_number, '.jpg')
 
       ApplicationRecord.no_touching do
         ActiveStorage::Attachment.create!(
