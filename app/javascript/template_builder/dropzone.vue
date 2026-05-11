@@ -35,10 +35,16 @@
             {{ message }}
           </div>
           <div
-            v-if="withDescription"
+            v-if="withDescription && !isLoading"
             class="text-sm"
           >
             <span class="font-medium">{{ t('click_to_upload') }}</span> {{ t('or_drag_and_drop_files') }}
+          </div>
+          <div
+            v-if="withDescription && !isLoading"
+            class="text-xs text-base-content/60 mt-2"
+          >
+            {{ t('larger_pdfs_may_take_a_while_to_process') }}
           </div>
         </div>
       </div>
