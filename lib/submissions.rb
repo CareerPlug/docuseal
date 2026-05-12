@@ -3,8 +3,6 @@
 module Submissions
   DEFAULT_SUBMITTERS_ORDER = 'single_sided'
 
-  PRELOAD_ALL_PAGES_AMOUNT = 200
-
   module_function
 
   def search(current_user, submissions, keyword, search_values: false, search_template: false)
@@ -79,19 +77,14 @@ module Submissions
     ActiveRecord::Associations::Preloader.new(
       records: [submission],
       associations: [
-        submission.template_id? ? { template_schema_documents: :blob } : { documents_attachments: :blob }
+        submission.template_id? ? :template_schema_documents : :documents_attachments
       ]
     ).call
 
-    total_pages =
-      submission.schema_documents.sum { |e| e.metadata.dig('pdf', 'number_of_pages').to_i }
-
-    if total_pages < PRELOAD_ALL_PAGES_AMOUNT
-      ActiveRecord::Associations::Preloader.new(
-        records: submission.schema_documents,
-        associations: [:blob, { preview_images_attachments: :blob }]
-      ).call
-    end
+    ActiveRecord::Associations::Preloader.new(
+      records: submission.schema_documents,
+      associations: [{ preview_images_attachments: :blob }]
+    ).call
 
     submission
   end

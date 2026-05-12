@@ -6,7 +6,6 @@
   >
     <img
       ref="image"
-      loading="lazy"
       :src="image.url"
       :width="width"
       :height="height"
