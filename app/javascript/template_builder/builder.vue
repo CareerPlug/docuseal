@@ -203,7 +203,6 @@
                 :draw-field="drawField"
                 :draw-field-type="drawFieldType"
                 :editable="editable"
-                :base-url="baseUrl"
                 @draw="[onDraw($event), withSelectedFieldType ? '' : drawFieldType = '', showDrawField = false]"
                 @drop-field="onDropfield"
                 @remove-area="removeArea"
