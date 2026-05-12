@@ -118,7 +118,7 @@ export default {
     },
     sortedPreviewImages () {
       return [...Array(this.numberOfPages).keys()]
-        .map((i) => this.previewImagesIndex[i])
+        .map((i) => this.previewImagesIndex[i] ? { ...this.previewImagesIndex[i], _pageIndex: i } : null)
         .filter(Boolean)
     },
     previewImagesIndex () {
