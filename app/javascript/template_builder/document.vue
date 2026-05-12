@@ -95,11 +95,6 @@ export default {
       required: false,
       default: null
     },
-    baseUrl: {
-      type: String,
-      required: false,
-      default: ''
-    },
     isDrag: {
       type: Boolean,
       required: false,
