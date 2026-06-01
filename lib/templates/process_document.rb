@@ -94,7 +94,7 @@ module Templates
         attachment.save!
       end
 
-      generate_document_preview_images(attachment, data, (0..number_of_pages - 1))
+      generate_document_preview_images(attachment, data, 0..number_of_pages - 1)
     end
 
     def generate_document_preview_images(attachment, data, range, concurrency: CONCURRENCY)
@@ -196,6 +196,5 @@ module Templates
         pdf_fields
       end
     end
-
   end
 end
