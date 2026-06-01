@@ -458,6 +458,8 @@
       </a>
     </li>
   </template>
+  <!-- Copy to All Pages disabled -->
+  <!--
   <li v-if="field.areas?.length === 1 && ['date', 'signature', 'initials', 'text', 'cells', 'stamp'].includes(field.type)">
     <a
       href="#"
@@ -471,10 +473,11 @@
       {{ t('copy_to_all_pages') }}
     </a>
   </li>
+  -->
 </template>
 
 <script>
-import { IconRouteAltLeft, IconTypography, IconShape, IconX, IconMathFunction, IconNewSection, IconInfoCircle, IconCopy } from '@tabler/icons-vue'
+import { IconRouteAltLeft, IconTypography, IconShape, IconX, IconMathFunction, IconNewSection, IconInfoCircle } from '@tabler/icons-vue'
 
 export default {
   name: 'FieldSettings',
@@ -483,7 +486,6 @@ export default {
     IconInfoCircle,
     IconMathFunction,
     IconRouteAltLeft,
-    IconCopy,
     IconNewSection,
     IconTypography,
     IconX
