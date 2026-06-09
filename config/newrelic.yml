@@ -111,7 +111,8 @@ common: &default_settings
 
   # Prefix of attributes to include in all destinations. Allows * as wildcard at
   # end.
-  # attributes.include: []
+  attributes.include:
+    - job.sidekiq.args.*
 
   # If true, enables an audit log which logs communications with the New Relic
   # collector.
@@ -1112,6 +1113,6 @@ staging:
 
 production:
   <<: *default_settings
-  app_name: <%= ENV['NEWRELIC_APP_NAME'] %> Production
+  app_name: Docuseal Production - <%= ENV['ENV_NAME'] %>
   monitor_mode: <%= ENV['NEWRELIC_MONITOR_MODE'].presence || true %>
-  distributed_tracing.enabled: false
+  distributed_tracing.enabled: true
