@@ -6,6 +6,22 @@ unless ENV['DOCKER_BUILD'] || ENV['CI_BUILD']
     config.project_id = ENV['AIRBRAKE_ID'] # rubocop:disable Style/FetchEnvVar
     config.environment = Rails.env
     config.ignore_environments = %w[development test]
-    config.root_directory = '/var/cpd/app'
+    config.root_directory = Rails.root.to_s
+    config.blocklist_keys = Rails.application.config.filter_parameters
+  end
+
+  AIRBRAKE_IGNORE = [
+    'AbstractController::ActionNotFound',
+    'ActionController::InvalidAuthenticityToken',
+    'ActionController::RoutingError',
+    'ActionController::UnknownAction',
+    'ActionController::UnknownFormat',
+    'ActiveRecord::RecordNotFound',
+    'SignalException',
+    'Sidekiq::Shutdown'
+  ].freeze
+
+  Airbrake.add_filter do |notice|
+    notice.ignore! if notice[:errors].any? { |error| AIRBRAKE_IGNORE.include?(error[:type]) }
   end
 end

@@ -1112,6 +1112,6 @@ staging:
 
 production:
   <<: *default_settings
-  app_name: <%= ENV['NEWRELIC_APP_NAME'] %> Production
+  app_name: Docuseal Production - <%= ENV['ENV_NAME'] %>
   monitor_mode: <%= ENV['NEWRELIC_MONITOR_MODE'].presence || true %>
-  distributed_tracing.enabled: false
+  distributed_tracing.enabled: true
