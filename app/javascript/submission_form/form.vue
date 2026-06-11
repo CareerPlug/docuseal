@@ -943,9 +943,10 @@ export default {
       const style = { backgroundColor: this.backgroundColor }
 
       if (this.isMobile) {
+        style.overflowX = 'hidden'
         style.minHeight = '100dvh'
         style.paddingTop = 'max(env(safe-area-inset-top), 1.5rem)'
-        style.paddingBottom = 'max(env(safe-area-inset-bottom), 1.5rem)'
+        style.paddingBottom = '6rem'
       }
 
       return style
