@@ -928,7 +928,7 @@ export default {
       const classes = ['shadow-md', 'bg-base-100', 'border-base-200', 'border', 'p-4', 'rounded', 'form-container']
 
       if (this.isMobile) {
-        classes.push('fixed', 'inset-0', 'w-full', 'flex', 'flex-col', 'items-center', 'justify-center', 'z-30', 'overflow-y-auto')
+        classes.push('fixed', 'inset-0', 'w-full', 'flex', 'flex-col', 'items-center', 'justify-start', 'z-30', 'overflow-y-auto')
       } else {
         classes.push('absolute', 'bottom-0', 'w-full', 'overflow-hidden')
 
@@ -945,7 +945,7 @@ export default {
       if (this.isMobile) {
         style.overflowX = 'hidden'
         style.minHeight = '100dvh'
-        style.paddingTop = 'max(env(safe-area-inset-top), 1.5rem)'
+        style.paddingTop = 'env(safe-area-inset-top)'
         style.paddingBottom = '6rem'
       }
 
