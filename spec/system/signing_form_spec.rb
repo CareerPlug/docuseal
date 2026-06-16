@@ -342,6 +342,33 @@ RSpec.describe 'Signing Form' do
     end
   end
 
+  context 'when the signature step is opened with expand=true' do
+    let(:template) { create(:template, account:, author:, only_field_types: %w[signature]) }
+    let(:submission) { create(:submission, template:) }
+    let(:submitter) do
+      create(:submitter, submission:, uuid: template.submitters.first['uuid'], account:)
+    end
+
+    it 'keeps the form panel expanded without needing to click Sign Now' do
+      visit submit_form_path(slug: submitter.slug, expand: 'true')
+
+      # The expand (Sign Now) button is absent because the panel is already open
+      expect(page).not_to have_selector('#expand_form_button')
+      expect(page).to have_selector('#form_container')
+
+      # The signature canvas is directly accessible
+      draw_canvas
+      click_button 'Sign and Complete'
+
+      expect(page).to have_content('Document has been signed!')
+
+      submitter.reload
+
+      expect(submitter.completed_at).to be_present
+      expect(field_value(submitter, 'Signature')).to be_present
+    end
+  end
+
   context 'when the multiple choice step' do
     let(:template) { create(:template, account:, author:, only_field_types: %w[multiple]) }
     let(:submission) { create(:submission, template:) }

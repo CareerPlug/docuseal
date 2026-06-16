@@ -39,6 +39,10 @@ class SubmitFormController < ApplicationController
     # Fetch prefill values if available
     @prefill_values = fetch_prefill_values_if_available
 
+    # When the URL contains expand=true, keep the form panel expanded on desktop
+    # instead of auto-minimizing when the current field is signature/initials/file/image.
+    @expand = params[:expand] == 'true'
+
     @attachments_index = build_attachments_index(submission)
 
     return unless @form_configs[:prefill_signature]
