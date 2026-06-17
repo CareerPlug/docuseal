@@ -92,4 +92,34 @@ RSpec.describe Submissions::CreateFromSubmitters do
       expect(submitter_uuids).not_to include(template.submitters[1]['uuid'])
     end
   end
+
+  describe 'external_id' do
+    let(:attrs_with_external_id) do
+      template.submitters.map.with_index do |s, index|
+        { 'uuid' => s['uuid'], 'email' => Faker::Internet.email,
+          'external_id' => "ats-user-#{index + 1}" }.with_indifferent_access
+      end
+    end
+
+    it 'persists external_id provided on each submitter' do
+      submissions = described_class.call(
+        template:,
+        user:,
+        submissions_attrs: [{ 'submitters' => attrs_with_external_id }.with_indifferent_access],
+        source: :api,
+        submitters_order: 'simultaneous'
+      )
+
+      persisted = submissions.first.submitters.sort_by do |s|
+        template.submitters.index { |ts| ts['uuid'] == s.uuid }
+      end
+      expect(persisted.map(&:external_id)).to eq(%w[ats-user-1 ats-user-2])
+    end
+
+    it 'leaves external_id blank when not provided' do
+      submissions = call(template:, submitters_order: 'simultaneous')
+
+      expect(submissions.first.submitters.map(&:external_id)).to all(be_nil)
+    end
+  end
 end
