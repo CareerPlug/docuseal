@@ -139,6 +139,17 @@ describe 'Submission API' do
       expect(response.parsed_body[1]['email']).to eq('jane.doe@example.com')
     end
 
+    it 'persists external_id passed on each submitter' do
+      post '/api/submissions', headers: { 'x-auth-token': author.access_token.token }, params: {
+        template_id: templates[0].id,
+        send_email: true,
+        submitters: [{ role: 'Employee', email: 'john.doe@example.com', external_id: 'ats-user-42' }]
+      }.to_json
+
+      expect(response).to have_http_status(:ok)
+      expect(Submission.last.submitters.first.external_id).to eq('ats-user-42')
+    end
+
     it 'returns an error if the submitter email is invalid' do
       post '/api/submissions', headers: { 'x-auth-token': author.access_token.token }, params: {
         template_id: templates[0].id,
