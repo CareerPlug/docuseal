@@ -78,12 +78,22 @@ class Account < ApplicationRecord
   private
 
   def create_careerplug_webhook
-    return if ENV['CAREERPLUG_WEBHOOK_SECRET'].blank? || ENV['CAREERPLUG_WEBHOOK_URL'].blank?
+    unless ENV['CAREERPLUG_WEBHOOK_URL'].present? && ENV['CAREERPLUG_WEBHOOK_SECRET'].present?
+      report_missing_webhook_config("account id=#{id}") unless Rails.env.local?
+      return
+    end
 
     webhook_urls.create!(
       url: ENV.fetch('CAREERPLUG_WEBHOOK_URL'),
       events: %w[form.started form.completed submission.completed form.changes_requested template.preferences_updated],
       secret: { 'X-CareerPlug-Secret' => ENV.fetch('CAREERPLUG_WEBHOOK_SECRET') }
     )
+  end
+
+  def report_missing_webhook_config(scope)
+    message = format('CAREERPLUG_WEBHOOK_URL/CAREERPLUG_WEBHOOK_SECRET are not set; ' \
+                     'skipping webhook creation for %<scope>s', scope:)
+    Rails.logger.error(message)
+    Airbrake.notify(message)
   end
 end

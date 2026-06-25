@@ -90,10 +90,26 @@ RSpec.describe Account do
     context 'when env vars are missing' do
       before do
         stub_const('ENV', ENV.to_h.except('CAREERPLUG_WEBHOOK_URL', 'CAREERPLUG_WEBHOOK_SECRET'))
+        allow(Rails.env).to receive(:local?).and_return(false)
       end
 
       it 'does not create a webhook' do
         expect { create(:account) }.not_to change(WebhookUrl, :count)
+      end
+
+      it 'logs a prominent error with the account id' do
+        allow(Rails.logger).to receive(:error)
+        create(:account)
+
+        expect(Rails.logger).to have_received(:error).with(/account id=\d+/)
+      end
+
+      it 'reports the missing config to Airbrake' do
+        allow(Airbrake).to receive(:notify)
+        create(:account)
+
+        expect(Airbrake).to have_received(:notify)
+          .with(%r{CAREERPLUG_WEBHOOK_URL/CAREERPLUG_WEBHOOK_SECRET are not set})
       end
     end
   end
