@@ -78,7 +78,13 @@ class Account < ApplicationRecord
   private
 
   def create_careerplug_webhook
-    return if ENV['CAREERPLUG_WEBHOOK_SECRET'].blank? || ENV['CAREERPLUG_WEBHOOK_URL'].blank?
+    unless ENV['CAREERPLUG_WEBHOOK_URL'].present? && ENV['CAREERPLUG_WEBHOOK_SECRET'].present?
+      message = format('CAREERPLUG_WEBHOOK_URL/CAREERPLUG_WEBHOOK_SECRET are not set; ' \
+                       'skipping webhook creation for account id=%<id>s', id:)
+      Rails.logger.error(message)
+      Airbrake.notify(message)
+      return
+    end
 
     webhook_urls.create!(
       url: ENV.fetch('CAREERPLUG_WEBHOOK_URL'),
