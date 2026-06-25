@@ -17,8 +17,8 @@ RSpec.describe 'careerplug_webhook_config initializer' do
     allow(Airbrake).to receive(:notify)
   end
 
-  context 'when not in production' do
-    before { allow(Rails.env).to receive(:production?).and_return(false) }
+  context 'when in a local environment (development/test)' do
+    before { allow(Rails.env).to receive(:local?).and_return(true) }
 
     it 'does not log an error or report to Airbrake' do
       load_initializer
@@ -28,9 +28,9 @@ RSpec.describe 'careerplug_webhook_config initializer' do
     end
   end
 
-  context 'when in production with both vars missing' do
+  context 'when not local with both vars missing' do
     before do
-      allow(Rails.env).to receive(:production?).and_return(true)
+      allow(Rails.env).to receive(:local?).and_return(false)
       stub_const('ENV', ENV.to_h.except('CAREERPLUG_WEBHOOK_URL', 'CAREERPLUG_WEBHOOK_SECRET'))
     end
 
@@ -48,9 +48,9 @@ RSpec.describe 'careerplug_webhook_config initializer' do
     end
   end
 
-  context 'when in production with only one var missing' do
+  context 'when not local with only one var missing' do
     before do
-      allow(Rails.env).to receive(:production?).and_return(true)
+      allow(Rails.env).to receive(:local?).and_return(false)
       stub_const('ENV', ENV.to_h.merge('CAREERPLUG_WEBHOOK_URL' => 'https://example.com/events')
                                    .except('CAREERPLUG_WEBHOOK_SECRET'))
     end
@@ -62,9 +62,9 @@ RSpec.describe 'careerplug_webhook_config initializer' do
     end
   end
 
-  context 'when in production with both vars present' do
+  context 'when not local with both vars present' do
     before do
-      allow(Rails.env).to receive(:production?).and_return(true)
+      allow(Rails.env).to receive(:local?).and_return(false)
       stub_const('ENV', ENV.to_h.merge(
                           'CAREERPLUG_WEBHOOK_URL' => 'https://www.careerplug.com/api/docuseal/events',
                           'CAREERPLUG_WEBHOOK_SECRET' => 'secret'

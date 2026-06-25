@@ -36,6 +36,7 @@ describe Partnership do
     context 'when env vars are missing' do
       before do
         stub_const('ENV', ENV.to_h.except('CAREERPLUG_WEBHOOK_URL', 'CAREERPLUG_WEBHOOK_SECRET'))
+        allow(Rails.env).to receive(:local?).and_return(false)
       end
 
       it 'does not create a webhook' do
