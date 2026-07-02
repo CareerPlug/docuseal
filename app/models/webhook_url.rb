@@ -46,6 +46,17 @@ class WebhookUrl < ApplicationRecord
     template.preferences_updated
   ].freeze
 
+  # Events the ATS-pointed webhook must register for an Account-owned row.
+  # Single source of truth for both the on-create callback and the backfill task
+  # so the two can never drift (drift here is what caused missing submission.completed).
+  CAREERPLUG_ACCOUNT_EVENTS = %w[
+    form.started
+    form.completed
+    submission.completed
+    form.changes_requested
+    template.preferences_updated
+  ].freeze
+
   belongs_to :account, optional: true
   belongs_to :partnership, optional: true
 

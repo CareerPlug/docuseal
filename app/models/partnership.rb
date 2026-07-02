@@ -47,7 +47,7 @@ class Partnership < ApplicationRecord
 
     webhook_urls.create!(
       url: ENV.fetch('CAREERPLUG_WEBHOOK_URL'),
-      events: %w[template.preferences_updated],
+      events: WebhookUrl::PARTNERSHIP_EVENTS,
       secret: { 'X-CareerPlug-Secret' => ENV.fetch('CAREERPLUG_WEBHOOK_SECRET') }
     )
   end
