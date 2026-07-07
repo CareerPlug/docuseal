@@ -24,6 +24,18 @@ module SendWebhookRequest
       raise LocalhostError, "Can't send to localhost." if uri.host.in?(LOCALHOSTS)
     end
 
+    response = post(webhook_url, uri, event_type: event_type, data: data)
+  rescue Faraday::Error => e
+    record_delivery(event_type, nil)
+    Rails.logger.error("Webhook transport error (#{event_type}): #{e.class} #{e.message}")
+    Airbrake.notify("DocuSeal outbound webhook transport error (#{event_type}): #{e.class}")
+    nil
+  else
+    record_delivery(event_type, response.status.to_i)
+    response
+  end
+
+  def post(webhook_url, uri, event_type:, data:)
     Faraday.post(uri) do |req|
       req.headers['Content-Type'] = 'application/json'
       req.headers['User-Agent'] = USER_AGENT
@@ -42,7 +54,16 @@ module SendWebhookRequest
       req.options.read_timeout = 8
       req.options.open_timeout = 8
     end
-  rescue Faraday::Error
-    nil
+  end
+
+  # Records delivery outcome as New Relic custom metrics so non-2xx rates and
+  # transport failures (previously swallowed silently to nil) are visible on a
+  # dashboard. No-op when the New Relic agent isn't loaded.
+  def record_delivery(event_type, status)
+    return unless defined?(::NewRelic::Agent)
+
+    bucket = status&.between?(200, 299) ? 'success' : 'failure'
+    ::NewRelic::Agent.record_metric("DocuSeal/Webhook/#{event_type}/#{bucket}", 1)
+    ::NewRelic::Agent.record_metric("DocuSeal/Webhook/total/#{bucket}", 1)
   end
 end
