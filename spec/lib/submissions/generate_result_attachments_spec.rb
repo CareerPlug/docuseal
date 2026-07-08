@@ -20,7 +20,7 @@ RSpec.describe Submissions::GenerateResultAttachments do
 
   # Point the submitter's submission at a single text field whose one area is
   # `area`, so `fill_submitter_fields` reaches the page lookup for that area.
-  def set_field_area(area)
+  def assign_field_area(area)
     submitter.submission.update!(
       template_fields: [
         { 'uuid' => SecureRandom.uuid, 'submitter_uuid' => submitter.uuid,
@@ -40,7 +40,7 @@ RSpec.describe Submissions::GenerateResultAttachments do
 
   describe '.fill_submitter_fields with a missing area page' do
     context 'when the area omits the page key' do
-      before { set_field_area('attachment_uuid' => attachment_uuid) }
+      before { assign_field_area('attachment_uuid' => attachment_uuid) }
 
       it 'skips the area instead of raising (regression: HexaPDF pages[nil])' do
         expect { fill }.not_to raise_error
@@ -53,7 +53,7 @@ RSpec.describe Submissions::GenerateResultAttachments do
     end
 
     context 'when the area page is explicitly nil' do
-      before { set_field_area('attachment_uuid' => attachment_uuid, 'page' => nil) }
+      before { assign_field_area('attachment_uuid' => attachment_uuid, 'page' => nil) }
 
       it 'skips the area instead of raising' do
         expect { fill }.not_to raise_error
@@ -66,7 +66,7 @@ RSpec.describe Submissions::GenerateResultAttachments do
     end
 
     context 'when the area page is out of range' do
-      before { set_field_area('attachment_uuid' => attachment_uuid, 'page' => 5) }
+      before { assign_field_area('attachment_uuid' => attachment_uuid, 'page' => 5) }
 
       it 'does not raise (existing next-if-page-nil handling still applies)' do
         expect { fill }.not_to raise_error
