@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'careerplug_webhook_backfill'
+
 namespace :webhooks do
   desc 'Configure CareerPlug webhook secret from CAREERPLUG_WEBHOOK_SECRET env var'
   task configure_careerplug: :environment do
@@ -91,5 +93,29 @@ namespace :webhooks do
     end
 
     puts "Done: #{updated} webhook URL(s) updated"
+  end
+
+  desc <<~DESC
+    Backfill + normalize the ATS-pointed WebhookUrl for every Account and Partnership.
+    Creates missing rows, normalizes events to the canonical set, syncs URL/secret.
+    Idempotent. Reports duplicate ATS-pointed rows per owner (no auto-delete).
+
+    ALWAYS run DRY_RUN=1 first and inspect counts + duplicate warnings before the live run.
+    A large `created` count for accounts that already have webhooks means the URL has
+    drifted (the task would create siblings instead of normalizing) — STOP and switch
+    to secret-identity matching instead of running live.
+  DESC
+  task backfill_careerplug: :environment do
+    dry_run = %w[1 true TRUE yes].include?(ENV.fetch('DRY_RUN', nil))
+    result = CareerplugWebhookBackfill.run(dry_run: dry_run)
+
+    puts "created=#{result.created} updated=#{result.updated} unchanged=#{result.unchanged} " \
+         "duplicate_warnings=#{result.duplicate_warnings.length}"
+
+    if dry_run
+      puts 'Dry run only — re-run without DRY_RUN to apply.'
+    elsif result.duplicate_warnings.any?
+      puts 'WARNING: duplicate ATS-pointed rows found (not deleted). Inspect and clean up manually.'
+    end
   end
 end
