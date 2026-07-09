@@ -14,6 +14,8 @@
 #
 # Migrations are intentionally NOT run here: the app service migrates on deploy,
 # and a periodic one-shot shouldn't race with it.
+#
+# POSIX sh only (Alpine /bin/sh is busybox ash, not bash): no bash-isms like &>.
 
 RAKE_TASK="${1:-}"
 if [ -z "$RAKE_TASK" ]; then
@@ -41,7 +43,7 @@ check_aws_setup() {
         exit 1
     fi
 
-    if ! command -v aws &> /dev/null; then
+    if ! command -v aws >/dev/null 2>&1; then
         echo "ERROR: AWS CLI is not installed. Please install it to proceed."
         exit 1
     fi
@@ -55,13 +57,11 @@ fetch_db_credentials() {
         exit 1
     fi
 
-    SECRET_JSON=$(aws secretsmanager get-secret-value \
+    if ! SECRET_JSON=$(aws secretsmanager get-secret-value \
         --region "$AWS_REGION" \
         --secret-id "$DB_SECRETS_NAME" \
         --query SecretString \
-        --output text)
-
-    if [ $? -ne 0 ]; then
+        --output text); then
         echo "ERROR: Failed to retrieve secrets from AWS Secrets Manager"
         exit 1
     fi
@@ -90,13 +90,16 @@ fetch_encryption_key() {
 
     ENCRYPTION_SECRET_NAME="cpdocuseal/encryption_key"
 
-    ENCRYPTION_KEY=$(aws secretsmanager get-secret-value \
+    if ! ENCRYPTION_KEY=$(aws secretsmanager get-secret-value \
         --region "$AWS_REGION" \
         --secret-id "$ENCRYPTION_SECRET_NAME" \
         --query SecretString \
-        --output text)
+        --output text); then
+        echo "ERROR: Failed to retrieve encryption key from AWS Secrets Manager"
+        exit 1
+    fi
 
-    if [ $? -ne 0 ] || [ -z "$ENCRYPTION_KEY" ] || [ "$ENCRYPTION_KEY" = "null" ]; then
+    if [ -z "$ENCRYPTION_KEY" ] || [ "$ENCRYPTION_KEY" = "null" ]; then
         echo "ERROR: Failed to retrieve encryption key from AWS Secrets Manager"
         exit 1
     fi
@@ -114,13 +117,11 @@ fetch_env_variables() {
         exit 1
     fi
 
-    SECRET_JSON=$(aws secretsmanager get-secret-value \
+    if ! SECRET_JSON=$(aws secretsmanager get-secret-value \
         --region "$AWS_REGION" \
         --secret-id "$CP_VARIABLES_NAME" \
         --query SecretString \
-        --output text)
-
-    if [ $? -ne 0 ]; then
+        --output text); then
         echo "ERROR: Failed to retrieve secrets from AWS Secrets Manager"
         exit 1
     fi
