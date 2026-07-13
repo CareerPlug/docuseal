@@ -1,0 +1,187 @@
+#!/bin/sh -e
+#
+# Loads the same Secrets Manager env as the app start scripts, then runs a rake
+# task by name. Used by the scheduled ECS task (EventBridge -> ECS RunTask) that
+# runs the periodic DocuSeal integrity checks (e.g. careerplug:check_webhooks),
+# so the one-shot task has the same env (DB creds, AIRBRAKE_*, NEWRELIC_*,
+# CAREERPLUG_WEBHOOK_*) as the long-running app.
+#
+# Usage (as the container command override):
+#   /app/bin/run_rake_task <rake task name>
+#
+# Example:
+#   /app/bin/run_rake_task careerplug:check_webhooks
+#
+# Migrations are intentionally NOT run here: the app service migrates on deploy,
+# and a periodic one-shot shouldn't race with it.
+#
+# POSIX sh only (Alpine /bin/sh is busybox ash, not bash): no bash-isms like &>.
+
+RAKE_TASK="${1:-}"
+if [ -z "$RAKE_TASK" ]; then
+    echo "ERROR: no rake task specified. Usage: $0 <rake task name>" >&2
+    exit 1
+fi
+
+# Resolve the env-file suffix from RAILS_ENV (.env.staging / .env.production).
+ENV_FILE_SUFFIX="${RAILS_ENV:-production}"
+ENV_FILE="./.env.${ENV_FILE_SUFFIX}"
+
+echo "=== CP Docuseal Rake Task Runner ==="
+echo "RAILS_ENV: ${ENV_FILE_SUFFIX}"
+echo "Task: ${RAKE_TASK}"
+
+# Enable jemalloc for reduced memory usage and latency.
+if [ -z "${LD_PRELOAD+x}" ]; then
+    LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit)
+    export LD_PRELOAD
+fi
+
+check_aws_setup() {
+    if [ -z "$AWS_REGION" ]; then
+        echo "ERROR: AWS_REGION environment variable is not set"
+        exit 1
+    fi
+
+    if ! command -v aws >/dev/null 2>&1; then
+        echo "ERROR: AWS CLI is not installed. Please install it to proceed."
+        exit 1
+    fi
+}
+
+fetch_db_credentials() {
+    echo "Fetching database credentials from AWS Secrets Manager..."
+
+    if [ -z "$DB_SECRETS_NAME" ]; then
+        echo "ERROR: DB_SECRETS_NAME environment variable is not set"
+        exit 1
+    fi
+
+    if ! SECRET_JSON=$(aws secretsmanager get-secret-value \
+        --region "$AWS_REGION" \
+        --secret-id "$DB_SECRETS_NAME" \
+        --query SecretString \
+        --output text); then
+        echo "ERROR: Failed to retrieve secrets from AWS Secrets Manager"
+        exit 1
+    fi
+
+    export DB_USERNAME=$(echo "$SECRET_JSON" | jq -r '.username')
+    export DB_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.password')
+
+    if [ "$DB_USERNAME" = "null" ] || [ "$DB_PASSWORD" = "null" ] || [ -z "$DB_USERNAME" ] || [ -z "$DB_PASSWORD" ]; then
+        echo "ERROR: Failed to parse database credentials from secrets"
+        exit 1
+    fi
+
+    if [ -f "$ENV_FILE" ]; then
+        grep -v "^DB_USERNAME=" "$ENV_FILE" > "${ENV_FILE}.tmp" || true
+        grep -v "^DB_PASSWORD=" "${ENV_FILE}.tmp" > "$ENV_FILE" || true
+        rm -f "${ENV_FILE}.tmp"
+    fi
+
+    echo "DB_USERNAME=$DB_USERNAME" >> "$ENV_FILE"
+    echo "DB_PASSWORD=$DB_PASSWORD" >> "$ENV_FILE"
+    echo "✓ Database credentials retrieved"
+}
+
+fetch_encryption_key() {
+    echo "Fetching encryption key from AWS Secrets Manager..."
+
+    ENCRYPTION_SECRET_NAME="cpdocuseal/encryption_key"
+
+    if ! ENCRYPTION_KEY=$(aws secretsmanager get-secret-value \
+        --region "$AWS_REGION" \
+        --secret-id "$ENCRYPTION_SECRET_NAME" \
+        --query SecretString \
+        --output text); then
+        echo "ERROR: Failed to retrieve encryption key from AWS Secrets Manager"
+        exit 1
+    fi
+
+    if [ -z "$ENCRYPTION_KEY" ] || [ "$ENCRYPTION_KEY" = "null" ]; then
+        echo "ERROR: Failed to retrieve encryption key from AWS Secrets Manager"
+        exit 1
+    fi
+
+    echo -n "$ENCRYPTION_KEY" > config/master.key
+    chmod 600 config/master.key
+    echo "✓ Encryption key written to config/master.key"
+}
+
+fetch_env_variables() {
+    echo "Fetching environment variables from AWS Secrets Manager..."
+
+    if [ -z "$CP_VARIABLES_NAME" ]; then
+        echo "ERROR: CP_VARIABLES_NAME environment variable is not set"
+        exit 1
+    fi
+
+    if ! SECRET_JSON=$(aws secretsmanager get-secret-value \
+        --region "$AWS_REGION" \
+        --secret-id "$CP_VARIABLES_NAME" \
+        --query SecretString \
+        --output text); then
+        echo "ERROR: Failed to retrieve secrets from AWS Secrets Manager"
+        exit 1
+    fi
+
+    export DB_HOST=$(echo "$SECRET_JSON" | jq -r '.host')
+    export REDIS_URL=$(echo "$SECRET_JSON" | jq -r '.redis_url')
+    export S3_ATTACHMENTS_BUCKET=$(echo "$SECRET_JSON" | jq -r '.s3_attachments_bucket')
+    export AIRBRAKE_ID=$(echo "$SECRET_JSON" | jq -r '.airbrake_id')
+    export AIRBRAKE_KEY=$(echo "$SECRET_JSON" | jq -r '.airbrake_key')
+    export NEWRELIC_LICENSE_KEY=$(echo "$SECRET_JSON" | jq -r '.newrelic_license_key')
+    export NEWRELIC_APP_NAME=$(echo "$SECRET_JSON" | jq -r '.newrelic_app_name')
+    export NEWRELIC_MONITOR_MODE=$(echo "$SECRET_JSON" | jq -r '.newrelic_monitor_mode')
+    export ENCRYPTION_SECRET=$(echo "$SECRET_JSON" | jq -r '.ENCRYPTION_SECRET // empty')
+    export CAREERPLUG_WEBHOOK_SECRET=$(echo "$SECRET_JSON" | jq -r '.CAREERPLUG_WEBHOOK_SECRET // empty')
+    export CAREERPLUG_WEBHOOK_URL=$(echo "$SECRET_JSON" | jq -r '.CAREERPLUG_WEBHOOK_URL // empty')
+
+    if [ "$DB_HOST" = "null" ] || [ "$REDIS_URL" = "null" ] || [ "$S3_ATTACHMENTS_BUCKET" = "null" ] || [ -z "$DB_HOST" ] || [ -z "$REDIS_URL" ] || [ -z "$S3_ATTACHMENTS_BUCKET" ]; then
+        echo "ERROR: Failed to parse variables from secrets"
+        exit 1
+    fi
+
+    if [ -f "$ENV_FILE" ]; then
+        grep -Ev "^(DB_HOST|REDIS_URL|S3_ATTACHMENTS_BUCKET|AIRBRAKE_ID|AIRBRAKE_KEY|NEWRELIC_LICENSE_KEY|NEWRELIC_APP_NAME|NEWRELIC_MONITOR_MODE|ENCRYPTION_SECRET|CAREERPLUG_WEBHOOK_SECRET|CAREERPLUG_WEBHOOK_URL)=" "$ENV_FILE" > "${ENV_FILE}.tmp" || true
+        mv "${ENV_FILE}.tmp" "$ENV_FILE"
+    fi
+
+    echo "DB_HOST=$DB_HOST" >> "$ENV_FILE"
+    echo "REDIS_URL=$REDIS_URL" >> "$ENV_FILE"
+    echo "S3_ATTACHMENTS_BUCKET=$S3_ATTACHMENTS_BUCKET" >> "$ENV_FILE"
+    echo "AIRBRAKE_ID=$AIRBRAKE_ID" >> "$ENV_FILE"
+    echo "AIRBRAKE_KEY=$AIRBRAKE_KEY" >> "$ENV_FILE"
+    echo "NEWRELIC_LICENSE_KEY=$NEWRELIC_LICENSE_KEY" >> "$ENV_FILE"
+    echo "NEWRELIC_APP_NAME=$NEWRELIC_APP_NAME" >> "$ENV_FILE"
+    echo "NEWRELIC_MONITOR_MODE=$NEWRELIC_MONITOR_MODE" >> "$ENV_FILE"
+
+    [ -n "$ENCRYPTION_SECRET" ] && echo "ENCRYPTION_SECRET=$ENCRYPTION_SECRET" >> "$ENV_FILE"
+    [ -n "$CAREERPLUG_WEBHOOK_SECRET" ] && echo "CAREERPLUG_WEBHOOK_SECRET=$CAREERPLUG_WEBHOOK_SECRET" >> "$ENV_FILE"
+    [ -n "$CAREERPLUG_WEBHOOK_URL" ] && echo "CAREERPLUG_WEBHOOK_URL=$CAREERPLUG_WEBHOOK_URL" >> "$ENV_FILE"
+
+    echo "✓ Environment variables retrieved"
+}
+
+set_environment() {
+    if [ -f "$ENV_FILE" ]; then
+        echo "Setting environment variables from $ENV_FILE"
+        set -a
+        . "$ENV_FILE"
+        set +a
+    fi
+}
+
+# cd ../../app is relative to the bin/ dir within the container, matching the start scripts.
+cd ../../app/
+
+set_environment
+check_aws_setup
+fetch_db_credentials
+fetch_encryption_key
+fetch_env_variables
+set_environment
+
+echo "=== Startup Complete - Running rake task: ${RAKE_TASK} ==="
+exec ./bin/rails "$RAKE_TASK"
