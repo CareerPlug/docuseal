@@ -158,13 +158,6 @@
             ({{ t('optional') }})
           </span>
         </div>
-        <div
-          v-if="currentField?.description"
-          class="mt-2 text-base text-base-content/80"
-          dir="auto"
-        >
-          <MarkdownContent :string="currentField.description" />
-        </div>
       </div>
       <form
         v-if="!isCompleted && !isInvite"
