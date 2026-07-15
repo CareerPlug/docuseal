@@ -428,15 +428,6 @@ export default {
     }
   },
   async mounted () {
-    this.$nextTick(() => {
-      if (this.$refs.canvas) {
-        this.$refs.canvas.width = this.$refs.canvas.parentNode.clientWidth * scale
-        this.$refs.canvas.height = this.$refs.canvas.parentNode.clientWidth * scale / 3
-
-        this.$refs.canvas.getContext('2d').scale(scale, scale)
-      }
-    })
-
     if (this.$refs.canvas) {
       this.pad = new SignaturePad(this.$refs.canvas)
 
@@ -450,27 +441,119 @@ export default {
         this.$emit('start')
       })
 
-      this.intersectionObserver = new IntersectionObserver((entries, observer) => {
+      this.setupCanvasSizing()
+    }
+  },
+  beforeUnmount () {
+    this.teardownCanvasSizing()
+    this.stopCheckSignature()
+  },
+  methods: {
+    canvasHeightForWidth (width) {
+      return width * scale / 3
+    },
+    setupCanvasSizing () {
+      this.resizeCanvas()
+
+      this.onResizeCanvas = () => {
+        if (this.resizeRaf) {
+          cancelAnimationFrame(this.resizeRaf)
+        }
+
+        // Double rAF: orientationchange often fires before layout has settled.
+        this.resizeRaf = requestAnimationFrame(() => {
+          this.resizeRaf = requestAnimationFrame(() => {
+            this.resizeCanvas()
+          })
+        })
+      }
+
+      window.addEventListener('resize', this.onResizeCanvas)
+      screen?.orientation?.addEventListener('change', this.onResizeCanvas)
+
+      if (typeof ResizeObserver !== 'undefined' && this.$refs.canvas?.parentNode) {
+        this.resizeObserver = new ResizeObserver(this.onResizeCanvas)
+        this.resizeObserver.observe(this.$refs.canvas.parentNode)
+      }
+
+      this.intersectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            this.$refs.canvas.width = this.$refs.canvas.parentNode.clientWidth * scale
-            this.$refs.canvas.height = this.$refs.canvas.parentNode.clientWidth * scale / 3
-
-            this.$refs.canvas.getContext('2d').scale(scale, scale)
-
-            this.intersectionObserver?.disconnect()
+            this.resizeCanvas()
           }
         })
       })
 
       this.intersectionObserver.observe(this.$refs.canvas)
-    }
-  },
-  beforeUnmount () {
-    this.intersectionObserver?.disconnect()
-    this.stopCheckSignature()
-  },
-  methods: {
+    },
+    teardownCanvasSizing () {
+      if (this.resizeRaf) {
+        cancelAnimationFrame(this.resizeRaf)
+        this.resizeRaf = null
+      }
+
+      if (this.onResizeCanvas) {
+        window.removeEventListener('resize', this.onResizeCanvas)
+        screen?.orientation?.removeEventListener('change', this.onResizeCanvas)
+      }
+
+      this.resizeObserver?.disconnect()
+      this.intersectionObserver?.disconnect()
+    },
+    resizeCanvas () {
+      const canvas = this.$refs.canvas
+
+      if (!canvas?.parentNode) {
+        return
+      }
+
+      const width = canvas.parentNode.clientWidth
+
+      if (!width) {
+        return
+      }
+
+      const nextW = width * scale
+      const nextH = this.canvasHeightForWidth(width)
+
+      if (canvas.width === nextW && canvas.height === nextH) {
+        return
+      }
+
+      const prevCssW = canvas.width / scale
+      const ratio = prevCssW > 0 ? width / prevCssW : 1
+
+      let data = []
+
+      if (this.pad) {
+        data = this.pad.toData()
+
+        if (data.length && ratio !== 1) {
+          data = data.map((group) => ({
+            ...group,
+            points: group.points.map((point) => ({
+              ...point,
+              x: point.x * ratio,
+              y: point.y * ratio
+            }))
+          }))
+        }
+      }
+
+      canvas.width = nextW
+      canvas.height = nextH
+      canvas.getContext('2d').scale(scale, scale)
+
+      if (this.pad) {
+        this.pad.clear()
+
+        if (data.length) {
+          this.pad.fromData(data)
+        } else if (this.isTextSignature && this.$refs.textInput?.value) {
+          this.updateWrittenSignature({ target: this.$refs.textInput })
+        }
+      }
+    },
     remove () {
       this.$emit('update:model-value', '')
 
