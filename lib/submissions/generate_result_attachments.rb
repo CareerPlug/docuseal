@@ -462,10 +462,22 @@ module Submissions
             if field['type'].in?(%w[multiple radio])
               option = field['options']&.find { |o| o['uuid'] == area['option_uuid'] }
 
+              # Stale option_uuid (template edited after submission) would raise on option['value'].
+              # Skip so the rest of the PDF still generates; log so missing marks stay visible.
+              if option.nil?
+                Rails.logger.warn(
+                  "Skipping option area with unknown option_uuid (submitter=#{submitter.id}, " \
+                  "field=#{field['uuid']}, option_uuid=#{area['option_uuid']})"
+                )
+                next
+              end
+
               option_name = option['value'].presence
               option_name ||= "#{I18n.t('option', locale: locale)} #{field['options'].index(option) + 1}"
 
               value = Array.wrap(value).include?(option_name)
+            else
+              value = Submitters::NormalizeValues::TRUE_VALUES.include?(value)
             end
 
             next unless value == true
