@@ -462,10 +462,14 @@ module Submissions
             if field['type'].in?(%w[multiple radio])
               option = field['options']&.find { |o| o['uuid'] == area['option_uuid'] }
 
+              next if option.nil?
+
               option_name = option['value'].presence
               option_name ||= "#{I18n.t('option', locale: locale)} #{field['options'].index(option) + 1}"
 
               value = Array.wrap(value).include?(option_name)
+            else
+              value = Submitters::NormalizeValues::TRUE_VALUES.include?(value)
             end
 
             next unless value == true
