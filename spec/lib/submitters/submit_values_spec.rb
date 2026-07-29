@@ -84,4 +84,75 @@ RSpec.describe Submitters::SubmitValues do
       end
     end
   end
+
+  describe '.merge_default_values' do
+    let(:checkbox_field) do
+      { 'uuid' => SecureRandom.uuid, 'name' => 'Agree', 'type' => 'checkbox',
+        'submitter_uuid' => submitter.uuid, 'default_value' => default_value }
+    end
+
+    before do
+      fields = [checkbox_field]
+
+      template.update!(fields: fields)
+      submission.update!(template_fields: fields,
+                         template_submitters: [{ 'uuid' => submitter.uuid, 'name' => 'Customer' }])
+      submitter.update!(values: {})
+    end
+
+    context 'with checkbox default_value "true"' do
+      let(:default_value) { 'true' }
+
+      it 'persists boolean true' do
+        expect(described_class.merge_default_values(submitter)[checkbox_field['uuid']]).to be(true)
+      end
+    end
+
+    context 'with checkbox default_value "false"' do
+      let(:default_value) { 'false' }
+
+      it 'persists boolean false' do
+        expect(described_class.merge_default_values(submitter)[checkbox_field['uuid']]).to be(false)
+      end
+
+      it 'evaluates checked/unchecked conditions as unchecked' do
+        values = described_class.merge_default_values(submitter)
+
+        checked = { 'action' => 'checked', 'field_uuid' => checkbox_field['uuid'] }
+        unchecked = { 'action' => 'unchecked', 'field_uuid' => checkbox_field['uuid'] }
+
+        expect(described_class.check_field_condition(checked, values, {})).to be(false)
+        expect(described_class.check_field_condition(unchecked, values, {})).to be(true)
+      end
+    end
+  end
+
+  describe '.check_field_condition' do
+    let(:options_field) do
+      { 'uuid' => 'field_with_options', 'type' => 'multiple',
+        'options' => [{ 'uuid' => 'option_1', 'value' => 'One' }] }
+    end
+    let(:fields_uuid_index) { { options_field['uuid'] => options_field } }
+    let(:values) { { options_field['uuid'] => ['One'] } }
+
+    context 'when the condition points at a deleted option uuid' do
+      it 'does not raise and evaluates equal/contains as false' do
+        %w[equal contains].each do |action|
+          condition = { 'action' => action, 'field_uuid' => options_field['uuid'], 'value' => 'deleted_option_uuid' }
+
+          expect { described_class.check_field_condition(condition, values, fields_uuid_index) }.not_to raise_error
+          expect(described_class.check_field_condition(condition, values, fields_uuid_index)).to be(false)
+        end
+      end
+
+      it 'does not raise and evaluates not_equal/does_not_contain as true' do
+        %w[not_equal does_not_contain].each do |action|
+          condition = { 'action' => action, 'field_uuid' => options_field['uuid'], 'value' => 'deleted_option_uuid' }
+
+          expect { described_class.check_field_condition(condition, values, fields_uuid_index) }.not_to raise_error
+          expect(described_class.check_field_condition(condition, values, fields_uuid_index)).to be(true)
+        end
+      end
+    end
+  end
 end
