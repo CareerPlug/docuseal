@@ -135,20 +135,16 @@ RSpec.describe Submissions::GenerateResultAttachments do
         expect(image_xobject_count).to eq(1)
       end
 
-      it 'draws a check when value is "1" or "yes"' do
-        assign_checkbox('1')
-        fill
-        expect(image_xobject_count).to eq(1)
+      it 'draws a check for other truthy string values' do
+        %w[1 yes].each do |value|
+          doc = HexaPDF::Document.new
+          doc.pages.add
+          pdfs_index[attachment_uuid] = doc
 
-        # Reset page for second value
-        pdfs_index[attachment_uuid].pages[0].canvas(type: :overlay) # ensure page exists
-        doc = HexaPDF::Document.new
-        doc.pages.add
-        pdfs_index[attachment_uuid] = doc
-
-        assign_checkbox('yes')
-        fill
-        expect(image_xobject_count).to eq(1)
+          assign_checkbox(value)
+          fill
+          expect(image_xobject_count).to eq(1), "expected check for #{value.inspect}"
+        end
       end
 
       it 'does not draw a check when value is false, "false", or nil' do
@@ -168,16 +164,17 @@ RSpec.describe Submissions::GenerateResultAttachments do
       it 'draws a check only on the matching option area' do
         yes_uuid = SecureRandom.uuid
         no_uuid = SecureRandom.uuid
+        options = [
+          { 'uuid' => yes_uuid, 'value' => 'Yes' },
+          { 'uuid' => no_uuid, 'value' => 'No' }
+        ]
 
         assign_fields(
           [{
             'uuid' => field_uuid,
             'submitter_uuid' => submitter.uuid,
             'type' => 'radio',
-            'options' => [
-              { 'uuid' => yes_uuid, 'value' => 'Yes' },
-              { 'uuid' => no_uuid, 'value' => 'No' }
-            ],
+            'options' => options,
             'areas' => [
               base_area('option_uuid' => yes_uuid, 'x' => 0.1),
               base_area('option_uuid' => no_uuid, 'x' => 0.3)
@@ -188,6 +185,25 @@ RSpec.describe Submissions::GenerateResultAttachments do
 
         fill
         expect(image_xobject_count).to eq(1)
+
+        # Selected Yes, but only the No area is on the page — must not draw a check.
+        doc = HexaPDF::Document.new
+        doc.pages.add
+        pdfs_index[attachment_uuid] = doc
+
+        assign_fields(
+          [{
+            'uuid' => field_uuid,
+            'submitter_uuid' => submitter.uuid,
+            'type' => 'radio',
+            'options' => options,
+            'areas' => [base_area('option_uuid' => no_uuid, 'x' => 0.3)]
+          }],
+          { field_uuid => 'Yes' }
+        )
+
+        fill
+        expect(image_xobject_count).to eq(0)
       end
     end
 
@@ -222,6 +238,8 @@ RSpec.describe Submissions::GenerateResultAttachments do
     end
 
     context 'when a radio option area has a stale option_uuid' do
+      let(:stale_option_uuid) { SecureRandom.uuid }
+
       before do
         assign_fields(
           [{
@@ -229,7 +247,7 @@ RSpec.describe Submissions::GenerateResultAttachments do
             'submitter_uuid' => submitter.uuid,
             'type' => 'radio',
             'options' => [{ 'uuid' => SecureRandom.uuid, 'value' => 'Yes' }],
-            'areas' => [base_area('option_uuid' => SecureRandom.uuid)]
+            'areas' => [base_area('option_uuid' => stale_option_uuid)]
           }],
           { field_uuid => 'Yes' }
         )
@@ -238,6 +256,13 @@ RSpec.describe Submissions::GenerateResultAttachments do
       it 'skips the area instead of raising' do
         expect { fill }.not_to raise_error
         expect(image_xobject_count).to eq(0)
+      end
+
+      it 'logs that the option area was skipped' do
+        fill
+        expect(Rails.logger).to have_received(:warn).with(
+          /Skipping option area with unknown option_uuid.*option_uuid=#{stale_option_uuid}/
+        )
       end
     end
 
