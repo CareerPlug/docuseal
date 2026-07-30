@@ -173,10 +173,13 @@ module Submitters
 
         next if value.blank?
 
-        acc[field['uuid']] = template_default_value_for_submitter(value, submitter, with_time: true)
+        value = template_default_value_for_submitter(value, submitter, with_time: true)
+
+        acc[field['uuid']] = Submitters::NormalizeValues.normalize_value(field, value)
       end
 
-      default_values.compact_blank.merge(submitter.values)
+      # Reject blanks but keep explicit false (unchecked checkbox defaults), which compact_blank would drop.
+      default_values.reject { |_, v| v.blank? && v != false }.merge(submitter.values)
     end
 
     def build_formula_values(submitter)
@@ -303,13 +306,21 @@ module Submitters
         submitter_values[condition['field_uuid']].present?
       when 'equal', 'contains'
         field = fields_uuid_index[condition['field_uuid']]
-        option = field['options'].find { |o| o['uuid'] == condition['value'] }
+        option = field['options']&.find { |o| o['uuid'] == condition['value'] }
+
+        # Stale option uuid (template edited after submission): no value can match a deleted option.
+        return false if option.nil?
+
         values = Array.wrap(submitter_values[condition['field_uuid']])
 
         values.include?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option) + 1}")
       when 'not_equal', 'does_not_contain'
         field = fields_uuid_index[condition['field_uuid']]
-        option = field['options'].find { |o| o['uuid'] == condition['value'] }
+        option = field['options']&.find { |o| o['uuid'] == condition['value'] }
+
+        # Stale option uuid (template edited after submission): every value differs from a deleted option.
+        return true if option.nil?
+
         values = Array.wrap(submitter_values[condition['field_uuid']])
 
         values.exclude?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option) + 1}")
