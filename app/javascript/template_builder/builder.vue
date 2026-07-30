@@ -346,6 +346,7 @@
         @close="isShowSigningOrderModal = false"
       />
     </Teleport>
+    <Toast ref="toast" />
   </div>
 </template>
 
@@ -364,6 +365,7 @@ import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
 import FieldSubmitter from './field_submitter'
 import SigningOrderModal from './signing_order_modal'
+import Toast from './toast'
 import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
 import { ref, computed, toRaw, watch } from 'vue'
@@ -393,7 +395,8 @@ export default {
     IconAdjustments,
     IconEye,
     IconDeviceFloppy,
-    SigningOrderModal
+    SigningOrderModal,
+    Toast
   },
   provide () {
     return {
@@ -1524,7 +1527,7 @@ export default {
           method: 'POST',
           body: formData
         }).then(async (resp) => {
-          this.updateFromUpload(await resp.json())
+          this.updateFromUpload(await resp.json(), { showToast: false })
         }).finally(() => {
           this.isLoadingBlankPage = false
         })
@@ -1533,7 +1536,11 @@ export default {
     onUploadFailed (error) {
       if (error) alert(error)
     },
-    updateFromUpload (data) {
+    updateFromUpload (data, { showToast = true } = {}) {
+      if (showToast) {
+        this.$refs.toast.show(this.t('document_uploaded_successfully'))
+      }
+
       this.template.schema.push(...data.schema)
       this.template.documents.push(...data.documents)
 
@@ -1606,7 +1613,7 @@ export default {
         this.save()
       }
     },
-    onDocumentReplace (data) {
+    onDocumentReplace (data, { showToast = true } = {}) {
       const { replaceSchemaItem, schema, documents } = data
 
       this.template.schema.splice(this.template.schema.indexOf(replaceSchemaItem), 1, { ...replaceSchemaItem, ...schema[0] })
@@ -1651,6 +1658,10 @@ export default {
         this.onUpload(this.template)
       }
 
+      if (showToast) {
+        this.$refs.toast.show(this.t('document_uploaded_successfully'))
+      }
+
       this.save()
     },
     onDocumentsReplace (data) {
@@ -1662,16 +1673,20 @@ export default {
             replaceSchemaItem: existingSchemaItem,
             schema: [schemaItem],
             documents: [data.documents.find((doc) => doc.uuid === schemaItem.attachment_uuid)]
-          })
+          }, { showToast: false })
         } else {
           this.updateFromUpload({
             schema: [schemaItem],
             documents: [data.documents.find((doc) => doc.uuid === schemaItem.attachment_uuid)],
             fields: data.fields,
             submitters: data.submitters
-          })
+          }, { showToast: false })
         }
       })
+
+      if (data.schema.length) {
+        this.$refs.toast.show(this.t('document_uploaded_successfully'))
+      }
     },
     onDocumentsReplaceAndTemplateClone (template) {
       window.Turbo.visit(`/templates/${template.id}/edit`)
