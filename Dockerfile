@@ -47,6 +47,8 @@ ENV RAILS_ENV=production
 ENV BUNDLE_WITHOUT="development:test"
 ENV LD_PRELOAD=/lib/libgcompat.so.0
 ENV OPENSSL_CONF=/app/openssl_legacy.cnf
+# CVE-2026-66066: block unfuzzed libvips loaders process-wide (puma/sidekiq/console)
+ENV VIPS_BLOCK_UNTRUSTED=1
 
 WORKDIR /app
 
