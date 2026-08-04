@@ -29,6 +29,9 @@ module Templates
       2 => 'right'
     }.freeze
 
+    # /Rotate values that swap media width and height in visual space.
+    SWAP_DIMENSION_ROTATIONS = [90, 270].freeze
+
     module_function
 
     # rubocop:disable Metrics
@@ -59,6 +62,14 @@ module Templates
           page_width = media_box[2] - media_box[0]
           page_height = media_box[3] - media_box[1]
 
+          # Transform media-space Rect into visual (post-rotation) space so
+          # areas match Pdfium previews and fill-time page.rotate(flatten: true).
+          rotation = (page[:Rotate] || 0).to_i % 360
+          if rotation != 0
+            x0, y0, x1, y1 = apply_page_rotation(x0, y0, x1, y1, rotation, page_width, page_height)
+            page_width, page_height = page_height, page_width if SWAP_DIMENSION_ROTATIONS.include?(rotation)
+          end
+
           x = x0
           y = y0
           w = x1 - x0
@@ -77,6 +88,9 @@ module Templates
 
           next if attrs[:w].zero? || attrs[:h].zero?
 
+          # Comb cell_w still divides visual width by MaxLen. On 90/270 pages a comb
+          # whose cells ran along media-x can get the wrong axis; pre-existing, not
+          # fixed by the rotation map above (would need axis-aware cell spacing).
           if child_field[:MaxLen] && child_field.try(:concrete_field_type) == :comb_text_field
             attrs[:cell_w] = w / page_width.to_f / child_field[:MaxLen].to_f
           end
@@ -122,6 +136,20 @@ module Templates
       corrected_y = y_coord + shift[1] - media_box_start[1]
 
       [corrected_x, corrected_y]
+    end
+
+    # Map a media-space Rect through PDF /Rotate (clockwise degrees) into visual
+    # page space. Mirrors HexaPDF::Type::Page#rotate(0, flatten: true) corner math.
+    # HexaPDF builds its flatten matrix from absolute box edges; this takes width/
+    # height extents and only matches that math because correct_coordinates has
+    # already shifted the Rect onto a 0-origin box before we get here.
+    def apply_page_rotation(llx, lly, urx, ury, rotation, width, height)
+      case rotation
+      when 90  then [lly, width - urx, ury, width - llx]
+      when 180 then [width - urx, height - ury, width - llx, height - lly]
+      when 270 then [height - ury, llx, height - lly, urx]
+      else          [llx, lly, urx, ury]
+      end
     end
 
     def build_field_properties(field)
