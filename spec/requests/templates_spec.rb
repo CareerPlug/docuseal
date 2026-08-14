@@ -227,6 +227,65 @@ describe 'Templates API' do
       stored_field = Template.last.fields.find { |f| f['name'] == 'First Name' }
       expect(stored_field['prefill']).to eq('employee_first_name')
     end
+
+    it 'creates a template from a PNG document' do
+      png_base64 = Base64.strict_encode64(Rails.root.join('spec/fixtures/sample-image.png').binread)
+
+      post '/api/templates/pdf',
+           headers: { 'x-auth-token': author.access_token.token },
+           params: {
+             name: 'Image Template',
+             documents: [{ name: 'sample-image.png', file: png_base64 }]
+           }.to_json,
+           env: { 'CONTENT_TYPE' => 'application/json' }
+
+      expect(response).to have_http_status(:ok)
+
+      document = Template.last.documents.first
+      expect(document.content_type).to eq('image/png')
+      expect(document.preview_images).to be_present
+    end
+
+    it 'creates a template from a JPEG document' do
+      jpeg_data = Vips::Image.new_from_file(Rails.root.join('spec/fixtures/sample-image.png').to_s)
+                             .write_to_buffer('.jpg')
+
+      post '/api/templates/pdf',
+           headers: { 'x-auth-token': author.access_token.token },
+           params: {
+             name: 'Jpeg Template',
+             documents: [{ name: 'sample-image.jpg', file: Base64.strict_encode64(jpeg_data) }]
+           }.to_json,
+           env: { 'CONTENT_TYPE' => 'application/json' }
+
+      expect(response).to have_http_status(:ok)
+      expect(Template.last.documents.first.content_type).to eq('image/jpeg')
+    end
+
+    it 'detects a PNG even when the document name ends in .pdf' do
+      png_base64 = Base64.strict_encode64(Rails.root.join('spec/fixtures/sample-image.png').binread)
+
+      post '/api/templates/pdf',
+           headers: { 'x-auth-token': author.access_token.token },
+           params: base_params.merge(documents: [{ name: 'scan.pdf', file: png_base64 }]).to_json,
+           env: { 'CONTENT_TYPE' => 'application/json' }
+
+      expect(response).to have_http_status(:ok)
+      expect(Template.last.documents.first.content_type).to eq('image/png')
+    end
+
+    it 'returns the existing error for a document that is not a PDF or image' do
+      post '/api/templates/pdf',
+           headers: { 'x-auth-token': author.access_token.token },
+           params: {
+             name: 'Bad Template',
+             documents: [{ name: 'notes.txt', file: Base64.strict_encode64('not a real file') }]
+           }.to_json,
+           env: { 'CONTENT_TYPE' => 'application/json' }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error']).to eq('Unable to create template')
+    end
   end
 
   describe 'POST /api/templates/:id/clone' do

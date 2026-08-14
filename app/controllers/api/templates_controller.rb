@@ -121,29 +121,22 @@ module Api
     def process_documents(template, documents_params)
       return [] if documents_params.blank?
 
-      documents_params.map.with_index do |doc_param, _index|
-        (doc_param[:file].length / 4.0 * 3).ceil
-        # Validate base64 string
+      documents_params.map do |doc_param|
         raise ArgumentError, 'Invalid base64 string format' unless doc_param[:file].match?(%r{\A[A-Za-z0-9+/]*={0,2}\z})
 
-        # Decode base64 file data
         file_data = Base64.decode64(doc_param[:file])
+        detected = Marcel::MimeType.for(StringIO.new(file_data), name: doc_param[:name])
+        content_type = detected.to_s.start_with?('image/') ? detected : 'application/pdf'
 
-        # Check if the decoded data looks like a PDF
-        file_data[0..3] if file_data.size >= 4
-
-        # Create a temporary file-like object
         file = Tempfile.new(['document', '.pdf'])
         file.binmode
         file.write(file_data)
         file.rewind
 
-        # Add original filename
         file.define_singleton_method(:original_filename) { doc_param[:name] }
-        file.define_singleton_method(:content_type) { 'application/pdf' }
+        file.define_singleton_method(:content_type) { content_type }
 
-        result = Templates::CreateAttachments.handle_pdf_or_image(template, file, file_data, {}, extract_fields: true)
-        result
+        Templates::CreateAttachments.handle_pdf_or_image(template, file, file_data, {}, extract_fields: true)
       ensure
         file&.close
         file&.unlink
