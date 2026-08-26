@@ -13,6 +13,7 @@
     <% end %>
     <%= stylesheet_pack_tag 'form', media: 'all' %>
     <%= render 'shared/posthog' if ENV['POSTHOG_TOKEN'] %>
+    <%= render 'shared/pendo' if insert_pendo? %>
   </head>
   <body>
     <% field = (@submitter.submission.template_fields || @submitter.template.fields).find { |f| f['type'] == 'signature' && f['uuid'].starts_with?(params[:f]) } %>

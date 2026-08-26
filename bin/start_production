@@ -178,6 +178,7 @@ fetch_env_variables() {
     export ENCRYPTION_SECRET=$(echo "$SECRET_JSON" | jq -r '.ENCRYPTION_SECRET // empty')
     export CAREERPLUG_WEBHOOK_SECRET=$(echo "$SECRET_JSON" | jq -r '.CAREERPLUG_WEBHOOK_SECRET // empty')
     export CAREERPLUG_WEBHOOK_URL=$(echo "$SECRET_JSON" | jq -r '.CAREERPLUG_WEBHOOK_URL // empty')
+    export PENDO_API_KEY=$(echo "$SECRET_JSON" | jq -r '.PENDO_API_KEY // empty')
 
     # Validate that we got the values
     if [ "$DB_HOST" = "null" ] || [ "$REDIS_URL" = "null" ] || [ "$S3_ATTACHMENTS_BUCKET" = "null" ] || [ -z "$DB_HOST" ] || [ -z "$REDIS_URL" ] || [ -z "$S3_ATTACHMENTS_BUCKET" ]; then
@@ -204,7 +205,7 @@ fetch_env_variables() {
     # Remove existing environment variables if they exist
     if [ -f "./.env.production" ]; then
         echo "Removing existing variables from .env.production"
-        grep -Ev "^(DB_HOST|REDIS_URL|S3_ATTACHMENTS_BUCKET|AIRBRAKE_ID|AIRBRAKE_KEY|NEWRELIC_LICENSE_KEY|NEWRELIC_APP_NAME|NEWRELIC_MONITOR_MODE|CF_URL|CF_KEY_PAIR_ID|CF_KEY_SECRET|SECURED_STORAGE_BUCKET|SECURED_STORAGE_REGION|ENCRYPTION_SECRET|CAREERPLUG_WEBHOOK_SECRET|CAREERPLUG_WEBHOOK_URL)=" ./.env.production > ./.env.production.tmp || true
+        grep -Ev "^(DB_HOST|REDIS_URL|S3_ATTACHMENTS_BUCKET|AIRBRAKE_ID|AIRBRAKE_KEY|NEWRELIC_LICENSE_KEY|NEWRELIC_APP_NAME|NEWRELIC_MONITOR_MODE|CF_URL|CF_KEY_PAIR_ID|CF_KEY_SECRET|SECURED_STORAGE_BUCKET|SECURED_STORAGE_REGION|ENCRYPTION_SECRET|CAREERPLUG_WEBHOOK_SECRET|CAREERPLUG_WEBHOOK_URL|PENDO_API_KEY)=" ./.env.production > ./.env.production.tmp || true
         mv ./.env.production.tmp ./.env.production
     fi
 
@@ -239,6 +240,11 @@ fetch_env_variables() {
     if [ -n "$CAREERPLUG_WEBHOOK_URL" ]; then
         echo "CAREERPLUG_WEBHOOK_URL=$CAREERPLUG_WEBHOOK_URL" >> ./.env.production
         echo "✓ CAREERPLUG_WEBHOOK_URL written to .env.production"
+    fi
+
+    if [ -n "$PENDO_API_KEY" ]; then
+        echo "PENDO_API_KEY=$PENDO_API_KEY" >> ./.env.production
+        echo "✓ PENDO_API_KEY written to .env.production"
     fi
 
     echo "✓ Environment variables successfully retrieved and written to .env.production"
