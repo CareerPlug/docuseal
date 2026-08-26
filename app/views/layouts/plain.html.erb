@@ -13,6 +13,7 @@
     <% end %>
     <%= stylesheet_pack_tag 'application', media: 'all' %>
     <%= render 'shared/posthog' if ENV['POSTHOG_TOKEN'] %>
+    <%= render 'shared/pendo' if insert_pendo? %>
   </head>
   <body>
     <% if flash.present? %><%= render 'shared/flash' %><% end %>
