@@ -4,6 +4,11 @@ class SubmitFormDownloadController < ApplicationController
   skip_before_action :authenticate_via_token!
   skip_authorization_check
 
+  rescue_from DocumentSecurityService::SigningError do |e|
+    Airbrake.notify(e)
+    head :bad_gateway
+  end
+
   FILES_TTL = 5.minutes
 
   def index
