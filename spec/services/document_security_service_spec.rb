@@ -31,9 +31,9 @@ RSpec.describe DocumentSecurityService do
         allow(ENV).to receive(:fetch).with('SECURE_ATTACHMENT_PRIVATE_KEY', nil).and_return(nil)
       end
 
-      it 'returns the regular attachment URL' do
-        result = described_class.signed_url_for(attachment)
-        expect(result).to eq(attachment.url)
+      it 'raises SigningError instead of returning an unusable fallback URL' do
+        expect { described_class.signed_url_for(attachment) }
+          .to raise_error(DocumentSecurityService::SigningError, /CloudFront is not configured/)
       end
     end
 
@@ -101,6 +101,62 @@ RSpec.describe DocumentSecurityService do
         expect(signer).to have_received(:signed_url) do |url, **_options|
           expect(url).to include('response-content-disposition=')
           expect(url).to include(CGI.escape('document with spaces & special.pdf'))
+        end
+      end
+
+      context 'when the S3 key contains spaces and special characters' do
+        it 'percent-encodes the path so the signature matches the requested URL' do
+          signer = instance_double(Aws::CloudFront::UrlSigner)
+          allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+          allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
+          allow(attachment.blob).to receive(:key)
+            .and_return('docuseal/f11918fd-3d36-4204-8376-9162f1885e2b/' \
+                        'F-O-C-880 CLIENT CONFIDENTIALITY.docx (1).pdf')
+
+          described_class.signed_url_for(attachment)
+
+          expect(signer).to have_received(:signed_url) do |url, **_options|
+            path = URI.parse(url).path
+            expect(path).not_to include(' ')
+            expect(path).to eq('/docuseal/f11918fd-3d36-4204-8376-9162f1885e2b/' \
+                               'F-O-C-880%20CLIENT%20CONFIDENTIALITY.docx%20%281%29.pdf')
+            expect(CGI.unescape(path))
+              .to eq('/docuseal/f11918fd-3d36-4204-8376-9162f1885e2b/' \
+                     'F-O-C-880 CLIENT CONFIDENTIALITY.docx (1).pdf')
+          end
+        end
+
+        it 'encodes percent signs, ampersands, and non-ASCII without double-encoding' do
+          signer = instance_double(Aws::CloudFront::UrlSigner)
+          allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+          allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
+          allow(attachment.blob).to receive(:key)
+            .and_return('docuseal/abc123/100% done & más~v2.pdf')
+
+          described_class.signed_url_for(attachment)
+
+          expect(signer).to have_received(:signed_url) do |url, **_options|
+            path = URI.parse(url).path
+            expect(path).not_to include(' ')
+            expect(path).to include('100%25%20done%20%26%20m%C3%A1s~v2.pdf')
+            expect(path).not_to include('más')
+            expect(CGI.unescape(path)).to eq('/docuseal/abc123/100% done & más~v2.pdf')
+          end
+        end
+
+        it 'does not encode keys that are already URL-safe' do
+          signer = instance_double(Aws::CloudFront::UrlSigner)
+          allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
+          allow(signer).to receive(:signed_url).and_return('https://signed-url.example.com')
+          allow(attachment.blob).to receive(:key)
+            .and_return('docuseal/f11918fd-3d36-4204-8376-9162f1885e2b/plain-file.pdf')
+
+          described_class.signed_url_for(attachment)
+
+          expect(signer).to have_received(:signed_url) do |url, **_options|
+            expect(URI.parse(url).path)
+              .to eq('/docuseal/f11918fd-3d36-4204-8376-9162f1885e2b/plain-file.pdf')
+          end
         end
       end
 
@@ -181,25 +237,13 @@ RSpec.describe DocumentSecurityService do
       end
 
       context 'when signing fails' do
-        it 'logs the error' do
+        it 'raises SigningError and does not fall back to a raw URL' do
           signer = instance_double(Aws::CloudFront::UrlSigner)
           allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
-          allow(signer).to receive(:signed_url).and_raise(StandardError.new('Signing failed'))
-          allow(Rails.logger).to receive(:error)
+          allow(signer).to receive(:signed_url).and_raise(StandardError, 'Signing failed')
 
-          described_class.signed_url_for(attachment)
-
-          expect(Rails.logger).to have_received(:error).with(/Failed to generate signed URL: Signing failed/)
-        end
-
-        it 'falls back to the regular attachment URL' do
-          signer = instance_double(Aws::CloudFront::UrlSigner)
-          allow(Aws::CloudFront::UrlSigner).to receive(:new).and_return(signer)
-          allow(signer).to receive(:signed_url).and_raise(StandardError.new('Signing failed'))
-          allow(Rails.logger).to receive(:error)
-
-          result = described_class.signed_url_for(attachment)
-          expect(result).to eq(attachment.url)
+          expect { described_class.signed_url_for(attachment) }
+            .to raise_error(DocumentSecurityService::SigningError, /CloudFront signing failed.*Signing failed/)
         end
       end
     end

@@ -151,5 +151,28 @@ describe 'Signed Document URLs API' do
         end.to raise_error(StandardError, 'Generation failed')
       end
     end
+
+    context 'when secure URL signing fails' do
+      let(:submission) { create(:submission, :with_submitters, template:, created_by_user: author) }
+      let(:builder) { instance_double(SignedDocumentUrlBuilder) }
+
+      before do
+        submission.submitters.first.update!(completed_at: Time.current)
+        allow(Submissions::EnsureResultGenerated).to receive(:call)
+        allow(SignedDocumentUrlBuilder).to receive(:new).with(submission.submitters.first).and_return(builder)
+        allow(builder).to receive(:call)
+          .and_raise(DocumentSecurityService::SigningError, 'CloudFront is not configured')
+        allow(Airbrake).to receive(:notify)
+      end
+
+      it 'returns 502 with an error message instead of a broken URL' do
+        get "/api/submissions/#{submission.id}/signed_document_url",
+            headers: { 'x-auth-token': author.access_token.token }
+
+        expect(response).to have_http_status(:bad_gateway)
+        expect(response.parsed_body['error']).to eq('Unable to generate secure document URLs')
+        expect(Airbrake).to have_received(:notify).at_least(:once)
+      end
+    end
   end
 end

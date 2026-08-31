@@ -16,3 +16,18 @@ if key_secret.present?
     Rails.logger.error("Failed to load CloudFront private key: #{e.message}")
   end
 end
+
+# Fail loudly (but do not block boot) when secured-storage serving is not
+# usable outside of local dev/test. Without these, every aws_s3_secured
+# document raises DocumentSecurityService::SigningError, so completed-doc
+# downloads from ATS fail. Mirrors careerplug_webhook_config.rb.
+unless Rails.env.local?
+  missing = %w[CF_URL CF_KEY_PAIR_ID SECURE_ATTACHMENT_PRIVATE_KEY].reject { |key| ENV[key].present? }
+
+  unless missing.empty?
+    message = "CloudFront secured-storage config missing in #{Rails.env}: #{missing.join(', ')}. " \
+              'Signed document URLs for secured storage will fail until this is fixed.'
+    Rails.logger.error("[secure_attachment] #{message}")
+    Airbrake.notify(message)
+  end
+end

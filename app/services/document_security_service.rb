@@ -5,24 +5,28 @@ require 'aws-sdk-cloudfront'
 # Service for handling secure document access with CloudFront signed URLs
 # Reuses same infrastructure and key pairs as ATS
 class DocumentSecurityService
+  # Raised when a secure URL cannot be generated. Callers must surface this as
+  # an error response -- never fall back to attachment.url: a presigned S3 URL
+  # for the secured bucket is rejected with a raw S3 AccessDenied XML page in
+  # the user's browser (CP-15418).
+  class SigningError < StandardError; end
+
   class << self
-    # Generate signed URL for a secured attachment
     # @param attachment [ActiveStorage::Attachment] The attachment to generate URL for
     # @param expires_in [ActiveSupport::Duration] How long the URL should be valid
     # @return [String] Signed CloudFront URL
+    # @raise [SigningError] when CloudFront is not configured or signing fails
     def signed_url_for(attachment, expires_in: 1.hour)
-      return attachment.url unless cloudfront_configured?
+      unless cloudfront_configured?
+        raise SigningError,
+              'CloudFront is not configured (CF_URL/CF_KEY_PAIR_ID/SECURE_ATTACHMENT_PRIVATE_KEY)'
+      end
 
-      # Get the CloudFront URL for this attachment
-      cloudfront_url = build_cloudfront_url(attachment)
-
-      # Generate signed URL using same system as ATS
-      signer = cloudfront_signer
-      signer.signed_url(cloudfront_url, expires: expires_in.from_now.to_i)
+      cloudfront_signer.signed_url(build_cloudfront_url(attachment), expires: expires_in.from_now.to_i)
+    rescue SigningError
+      raise
     rescue StandardError => e
-      Rails.logger.error("Failed to generate signed URL: #{e.message}")
-      # Fallback to direct URL if signing fails
-      attachment.url
+      raise SigningError, "CloudFront signing failed: #{e.class}: #{e.message}"
     end
 
     private
@@ -42,10 +46,18 @@ class DocumentSecurityService
 
     def build_cloudfront_url(attachment)
       key = ensure_docuseal_prefix(attachment.blob.key)
-      base_url = "#{cloudfront_base_url}/#{key}"
-      query_string = build_query_params(attachment)
+      "#{cloudfront_base_url}/#{encode_path_segments(key)}?#{build_query_params(attachment)}"
+    end
 
-      "#{base_url}?#{query_string}"
+    # CloudFront validates the signature against the exact URL the client
+    # requests. Secured blob keys embed the original filename verbatim
+    # ("docuseal/<uuid>/<filename>"), and browsers percent-encode characters
+    # like spaces before sending, so a signature over the raw key never
+    # matches the request (CP-15418). Encode each segment individually so
+    # "/" separators survive; strict RFC 3986 encoding keeps unreserved
+    # characters literal, so already-safe keys are not double-encoded.
+    def encode_path_segments(key)
+      key.split('/').map { |segment| ERB::Util.url_encode(segment) }.join('/')
     end
 
     def ensure_docuseal_prefix(s3_key)

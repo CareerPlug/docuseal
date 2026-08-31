@@ -4,6 +4,11 @@ class SubmissionsDownloadController < ApplicationController
   skip_before_action :authenticate_via_token!
   skip_authorization_check
 
+  rescue_from DocumentSecurityService::SigningError do |e|
+    Airbrake.notify(e)
+    head :bad_gateway
+  end
+
   TTL = 40.minutes
   FILES_TTL = 5.minutes
 
