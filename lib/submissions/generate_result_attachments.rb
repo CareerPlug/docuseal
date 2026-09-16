@@ -305,6 +305,10 @@ module Submissions
 
               io = StringIO.new(image.resize([scale * 4, 1].select(&:positive?).min).write_to_buffer('.png'))
 
+              if field['type'] == 'signature' && field.dig('preferences', 'opaque_background')
+                canvas.fill_color('white').rectangle(image_x, image_y, image_width, image_height).fill
+              end
+
               canvas.image(io, at: [image_x, image_y], width: image_width, height: image_height)
 
               id_string = "ID: #{attachment.uuid}".upcase
@@ -369,6 +373,14 @@ module Submissions
                             height - (area['y'] * height) - TEXT_TOP_MARGIN -
                             result.lines.sum(&:height) - image_height)
 
+              if field.dig('preferences', 'opaque_background')
+                image_x = (area['x'] * width) + (area['w'] * width / 2) - ((image.width * scale) / 2)
+                image_y = height - (area['y'] * height) - (image.height * scale / 2) - (image_height / 2)
+
+                canvas.fill_color('white').rectangle(image_x, image_y, image.width * scale,
+                                                     image.height * scale).fill
+              end
+
               canvas.image(
                 io,
                 at: [
@@ -396,6 +408,14 @@ module Submissions
                      (area['h'] * height) / image.height].min
 
             io = StringIO.new(image.resize([scale * 4, 1].select(&:positive?).min).write_to_buffer('.png'))
+
+            if field['type'] == 'signature' && field.dig('preferences', 'opaque_background')
+              image_x = (area['x'] * width) + (area['w'] * width / 2) - ((image.width * scale) / 2)
+              image_y = height - (area['y'] * height) - (image.height * scale / 2) - (area['h'] * height / 2)
+
+              canvas.fill_color('white').rectangle(image_x, image_y, image.width * scale,
+                                                   image.height * scale).fill
+            end
 
             canvas.image(
               io,
