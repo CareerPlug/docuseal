@@ -346,7 +346,7 @@ RSpec.describe Submissions::GenerateResultAttachments do
 
     def assign_signature_with_opaque_background
       blob = ActiveStorage::Blob.create_and_upload!(
-        io: File.open(Rails.root.join('spec/fixtures/sample-image.png')),
+        io: Rails.root.join('spec/fixtures/sample-image.png').open,
         filename: 'signature.png',
         content_type: 'image/png'
       )
