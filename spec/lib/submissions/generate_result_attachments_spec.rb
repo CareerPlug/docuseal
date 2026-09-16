@@ -325,4 +325,51 @@ RSpec.describe Submissions::GenerateResultAttachments do
       end
     end
   end
+
+  describe '.fill_submitter_fields opaque signature background' do
+    let(:field_uuid) { SecureRandom.uuid }
+
+    def page_raw_content
+      page = pdfs_index[attachment_uuid].pages[0]
+      content = page.contents
+      content = content.data if content.respond_to?(:data)
+      content.to_s
+    end
+
+    def page_draws_white_fill_rectangle?
+      content = page_raw_content
+
+      white_fill = content.match?(/1(\.0+)?\s+g\b|1(\.0+)?\s+1(\.0+)?\s+1(\.0+)?\s+rg\b/)
+
+      white_fill && content.match?(/\bre\b/) && content.match?(/\bf\b/)
+    end
+
+    def assign_signature_with_opaque_background
+      blob = ActiveStorage::Blob.create_and_upload!(
+        io: File.open(Rails.root.join('spec/fixtures/sample-image.png')),
+        filename: 'signature.png',
+        content_type: 'image/png'
+      )
+      submitter.attachments.attach(blob)
+
+      assign_fields(
+        [{
+          'uuid' => field_uuid,
+          'submitter_uuid' => submitter.uuid,
+          'type' => 'signature',
+          'preferences' => { 'opaque_background' => true },
+          'areas' => [base_area]
+        }],
+        { field_uuid => submitter.attachments.first.uuid }
+      )
+    end
+
+    it 'draws a white fill rectangle under the signature image' do
+      assign_signature_with_opaque_background
+      fill
+
+      expect(image_xobject_count).to eq(1)
+      expect(page_draws_white_fill_rectangle?).to be(true)
+    end
+  end
 end
