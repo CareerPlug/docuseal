@@ -61,7 +61,7 @@
       <div
         class="flex overflow-hidden"
         :class="isNarrow && (withSignatureId || field.preferences?.reason_field_uuid) ? 'w-1/2' : 'flex-grow'"
-        style="min-height: 50%"
+        :style="{ minHeight: '50%', ...(field.preferences?.opaque_background ? { backgroundColor: '#fff' } : {}) }"
       >
         <img
           class="object-contain mx-auto"

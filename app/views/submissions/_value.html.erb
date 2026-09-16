@@ -7,7 +7,7 @@
   <% if field['type'] == 'signature' %>
     <% is_narrow = area['h']&.positive? && (area['w'].to_f / area['h']) > 6 %>
     <div class="flex justify-between w-full h-full gap-1 <%= is_narrow && (local_assigns[:with_signature_id] || field.dig('preferences', 'reason_field_uuid').present?) ? 'flex-row' : 'flex-col' %>">
-      <div class="flex overflow-hidden <%= is_narrow && (local_assigns[:with_signature_id] || field.dig('preferences', 'reason_field_uuid').present?) ? 'w-1/2' : 'flex-grow' %>" style="min-height: 50%">
+      <div class="flex overflow-hidden <%= is_narrow && (local_assigns[:with_signature_id] || field.dig('preferences', 'reason_field_uuid').present?) ? 'w-1/2' : 'flex-grow' %>" style="min-height: 50%<%= '; background-color: #fff' if field.dig('preferences', 'opaque_background') %>">
         <img class="object-contain mx-auto" src="<%= attachments_index[value].url %>">
       </div>
       <% if (local_assigns[:with_signature_id] || field.dig('preferences', 'reason_field_uuid').present?) && attachment = attachments_index[value] %>
