@@ -319,6 +319,20 @@
     </label>
   </li>
   <li
+    v-if="field.type === 'signature'"
+    @click.stop
+  >
+    <label class="cursor-pointer py-1.5">
+      <input
+        :checked="!!field.preferences?.opaque_background"
+        type="checkbox"
+        class="toggle toggle-xs"
+        @change="[field.preferences ||= {}, field.preferences.opaque_background = !field.preferences.opaque_background, !field.preferences.opaque_background && delete field.preferences.opaque_background, save()]"
+      >
+      <span class="label-text">{{ field.preferences?.opaque_background ? t('remove_opaque_background') : t('add_opaque_background') }}</span>
+    </label>
+  </li>
+  <li
     v-if="field.type == 'checkbox'"
     @click.stop
   >
