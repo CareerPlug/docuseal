@@ -14,6 +14,8 @@ class PageLimitEventsController < ApplicationController
   SURFACES = %w[builder dashboard].freeze
 
   def create
+    return head :unauthorized if current_user.blank?
+
     page_count = Integer(params[:page_count], exception: false)
     file_size = params[:file_size].present? ? Integer(params[:file_size], exception: false) : nil
 

@@ -53,5 +53,13 @@ describe 'PageLimitEvents' do
         expect(response).to have_http_status(:unauthorized)
       end
     end
+
+    context 'when authenticated with an invalid token' do
+      it 'returns 401' do
+        post '/page_limit_events', params: valid_params, headers: { 'X-Auth-Token' => 'invalid' }
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
   end
 end

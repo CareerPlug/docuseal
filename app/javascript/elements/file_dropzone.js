@@ -84,7 +84,7 @@ export default actionable(targetable(class extends HTMLElement {
   }
 
   async uploadFiles (files) {
-    if (this.dataset.submitOnUpload) {
+    if (this.dataset.pageLimitGuard) {
       for (const file of files) {
         // Small files scan synchronously so allow-case uploads still dispatch
         // in the change-event task; large files use the async chunked reader.
