@@ -346,6 +346,15 @@
         @close="isShowSigningOrderModal = false"
       />
     </Teleport>
+    <Teleport
+      v-if="isShowPageLimitModal"
+      to="#docuseal_modal_container"
+    >
+      <PageLimitModal
+        :page-count="pageLimitPageCount"
+        @close="isShowPageLimitModal = false"
+      />
+    </Teleport>
     <Toast ref="toast" />
   </div>
 </template>
@@ -365,6 +374,7 @@ import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
 import FieldSubmitter from './field_submitter'
 import SigningOrderModal from './signing_order_modal'
+import PageLimitModal from './page_limit_modal'
 import Toast from './toast'
 import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
@@ -396,6 +406,7 @@ export default {
     IconEye,
     IconDeviceFloppy,
     SigningOrderModal,
+    PageLimitModal,
     Toast
   },
   provide () {
@@ -658,7 +669,9 @@ export default {
       drawOption: null,
       dragField: null,
       isDragFile: false,
-      isShowSigningOrderModal: false
+      isShowSigningOrderModal: false,
+      isShowPageLimitModal: false,
+      pageLimitPageCount: 0
     }
   },
   computed: {
@@ -795,6 +808,7 @@ export default {
 
     window.addEventListener('resize', this.onWindowResize)
     window.addEventListener('dragleave', this.onWindowDragLeave)
+    window.addEventListener('docuseal:page-limit-blocked', this.onPageLimitBlocked)
 
     this.$nextTick(() => {
       if (document.location.search?.includes('stripe_connect_success')) {
@@ -823,6 +837,7 @@ export default {
 
     window.removeEventListener('resize', this.onWindowResize)
     window.removeEventListener('dragleave', this.onWindowDragLeave)
+    window.removeEventListener('docuseal:page-limit-blocked', this.onPageLimitBlocked)
   },
   beforeUpdate () {
     this.documentRefs = []
@@ -1535,6 +1550,10 @@ export default {
     },
     onUploadFailed (error) {
       if (error) alert(error)
+    },
+    onPageLimitBlocked (event) {
+      this.pageLimitPageCount = event.detail.pageCount
+      this.isShowPageLimitModal = true
     },
     updateFromUpload (data, { showToast = true } = {}) {
       if (showToast) {

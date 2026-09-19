@@ -154,7 +154,10 @@ const en = {
   and: 'and',
   or: 'or',
   start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: 'Start a quick tour to learn how to create an send your first document',
-  start_tour: 'Start Tour'
+  start_tour: 'Start Tour',
+  page_limit_title: 'Document exceeds the page limit',
+  page_limit_body: 'This PDF has {page_count} pages, which exceeds the 120-page limit. Split it into smaller documents under 120 pages and add fields to each document.',
+  page_limit_close: 'Close'
 }
 
 const es = {
