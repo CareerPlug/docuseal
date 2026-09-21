@@ -41,7 +41,7 @@
 
 <script>
 import { IconUpload, IconInnerShadowTop } from '@tabler/icons-vue'
-import { PAGE_LIMIT, SYNC_SCAN_LIMIT, countPdfPages, countPdfPagesSync, bucketFor, reportBlocked } from '../lib/pdf_page_limit_guard'
+import { PAGE_LIMIT, SYNC_SCAN_LIMIT, countPdfPages, countPdfPagesSync, reportBlocked } from '../lib/pdf_page_limit_guard'
 
 export default {
   name: 'DocumentsUpload',
@@ -85,14 +85,12 @@ export default {
         const pageCount = file.size <= SYNC_SCAN_LIMIT ? countPdfPagesSync(file) : await countPdfPages(file)
 
         if (pageCount && pageCount > PAGE_LIMIT) {
-          const bucket = bucketFor(pageCount)
-
-          reportBlocked({ pageCount, bucket, surface: 'builder', fileSize: file.size })
+          reportBlocked({ pageCount, surface: 'builder', fileSize: file.size })
 
           this.isLoading = false
           this.$refs.input.value = ''
 
-          window.dispatchEvent(new CustomEvent('docuseal:page-limit-blocked', { detail: { pageCount, bucket } }))
+          window.dispatchEvent(new CustomEvent('docuseal:page-limit-blocked', { detail: { pageCount } }))
 
           return
         }

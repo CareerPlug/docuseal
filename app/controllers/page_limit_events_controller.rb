@@ -10,14 +10,15 @@ class PageLimitEventsController < ApplicationController
 
   skip_authorization_check
 
-  BUCKETS = %w[121-150 151-200 201+].freeze
   SURFACES = %w[builder dashboard].freeze
+  PAGE_LIMIT = 120
+  MAX_INTEGER_LENGTH = 10
 
   def create
     return head :unauthorized if current_user.blank?
 
-    page_count = Integer(params[:page_count], exception: false)
-    file_size = params[:file_size].present? ? Integer(params[:file_size], exception: false) : nil
+    page_count = parse_integer(params[:page_count])
+    file_size = params[:file_size].present? ? parse_integer(params[:file_size]) : nil
 
     unless valid_event_params?(page_count, file_size)
       return render json: { error: 'Invalid parameters' }, status: :unprocessable_entity
@@ -26,7 +27,7 @@ class PageLimitEventsController < ApplicationController
     Rails.logger.info({
       event: 'page_limit_blocked',
       page_count:,
-      bucket: params[:bucket],
+      bucket: bucket_for(page_count),
       surface: params[:surface],
       file_size:,
       account_id: current_account&.id,
@@ -39,10 +40,23 @@ class PageLimitEventsController < ApplicationController
   private
 
   def valid_event_params?(page_count, file_size)
-    return false if page_count.blank? || page_count <= 0
-    return false unless params[:bucket].in?(BUCKETS) && params[:surface].in?(SURFACES)
+    return false if page_count.blank? || page_count <= PAGE_LIMIT
+    return false unless params[:surface].in?(SURFACES)
     return true if params[:file_size].blank?
 
     file_size.present? && !file_size.negative?
+  end
+
+  def bucket_for(page_count)
+    return '121-150' if page_count <= 150
+    return '151-200' if page_count <= 200
+
+    '201+'
+  end
+
+  def parse_integer(value)
+    return nil unless value.to_s.match?(/\A\d{1,#{MAX_INTEGER_LENGTH}}\z/o)
+
+    Integer(value, exception: false)
   end
 end

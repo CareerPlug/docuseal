@@ -1,15 +1,10 @@
 import { target, targets, targetable } from '@github/catalyst/lib/targetable'
-import { PAGE_LIMIT, SYNC_SCAN_LIMIT, countPdfPages, countPdfPagesSync, bucketFor, reportBlocked } from '../lib/pdf_page_limit_guard'
+import { PAGE_LIMIT, PAGE_LIMIT_MESSAGE, SYNC_SCAN_LIMIT, countPdfPages, countPdfPagesSync, reportBlocked } from '../lib/pdf_page_limit_guard'
 
 const loadingIconHtml = `<svg xmlns="http://www.w3.org/2000/svg" class="animate-spin" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
   <path stroke="none" d="M0 0h24v24H0z" fill="none" />
   <path d="M12 3a9 9 0 1 0 9 9" />
 </svg>`
-
-// Best-practices copy for blocked dashboard uploads. The dashboard has no t()
-// i18n, so the copy is held here (overridable per element via a
-// data-page-limit-message attribute); mirrors the builder page_limit_body copy.
-const PAGE_LIMIT_MESSAGE = 'This PDF has {page_count} pages, which exceeds the 120-page limit. Split it into smaller documents under 120 pages and add fields to each document.'
 
 // Blocked uploads make no request, so there is no flash cycle: render an
 // inline DOM message only.
@@ -44,7 +39,7 @@ const onGuardedUploadChange = async (e) => {
     const pageCount = file.size <= SYNC_SCAN_LIMIT ? countPdfPagesSync(file) : await countPdfPages(file)
 
     if (pageCount && pageCount > PAGE_LIMIT) {
-      reportBlocked({ pageCount, bucket: bucketFor(pageCount), surface: 'dashboard', fileSize: file.size })
+      reportBlocked({ pageCount, surface: 'dashboard', fileSize: file.size })
 
       input.value = ''
 
@@ -225,7 +220,7 @@ export default targetable(class extends HTMLElement {
       const pageCount = file.size <= SYNC_SCAN_LIMIT ? countPdfPagesSync(file) : await countPdfPages(file)
 
       if (pageCount && pageCount > PAGE_LIMIT) {
-        reportBlocked({ pageCount, bucket: bucketFor(pageCount), surface: 'dashboard', fileSize: file.size })
+        reportBlocked({ pageCount, surface: 'dashboard', fileSize: file.size })
 
         this.hideDraghover()
 

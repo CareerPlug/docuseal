@@ -11,6 +11,11 @@
 export const PAGE_LIMIT = 120
 export const SYNC_SCAN_LIMIT = 8 * 1024 * 1024
 
+// Best-practices copy for blocked dashboard uploads. The dashboard has no t()
+// i18n, so this module is the single shared source (overridable per element via
+// a data-page-limit-message attribute); mirrors the builder page_limit_body copy.
+export const PAGE_LIMIT_MESSAGE = 'This PDF has {page_count} pages, which exceeds the 120-page limit. Split it into smaller documents under 120 pages and add fields to each document.'
+
 const CHUNK_SIZE = 1024 * 256
 const OVERLAP = 64
 
@@ -135,19 +140,7 @@ export async function countPdfPages (file) {
   }
 }
 
-export function bucketFor (pageCount) {
-  if (pageCount <= 150) {
-    return '121-150'
-  }
-
-  if (pageCount <= 200) {
-    return '151-200'
-  }
-
-  return '201+'
-}
-
-export function reportBlocked ({ pageCount, bucket, surface, fileSize }) {
+export function reportBlocked ({ pageCount, surface, fileSize }) {
   try {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
 
@@ -158,7 +151,7 @@ export function reportBlocked ({ pageCount, bucket, surface, fileSize }) {
         'Content-Type': 'application/json',
         ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
       },
-      body: JSON.stringify({ page_count: pageCount, bucket, surface, file_size: fileSize })
+      body: JSON.stringify({ page_count: pageCount, surface, file_size: fileSize })
     }).catch(() => {})
   } catch {
     // Metrics must never break the upload UX.

@@ -1,11 +1,6 @@
 import { actionable } from '@github/catalyst/lib/actionable'
 import { target, targetable } from '@github/catalyst/lib/targetable'
-import { PAGE_LIMIT, SYNC_SCAN_LIMIT, countPdfPages, countPdfPagesSync, bucketFor, reportBlocked } from '../lib/pdf_page_limit_guard'
-
-// Best-practices copy for blocked dashboard uploads. The dashboard has no t()
-// i18n, so the copy is held here (overridable per element via a
-// data-page-limit-message attribute); mirrors the builder page_limit_body copy.
-const PAGE_LIMIT_MESSAGE = 'This PDF has {page_count} pages, which exceeds the 120-page limit. Split it into smaller documents under 120 pages and add fields to each document.'
+import { PAGE_LIMIT, PAGE_LIMIT_MESSAGE, SYNC_SCAN_LIMIT, countPdfPages, countPdfPagesSync, reportBlocked } from '../lib/pdf_page_limit_guard'
 
 // Blocked uploads make no request, so there is no flash cycle: render an
 // inline DOM message only.
@@ -91,7 +86,7 @@ export default actionable(targetable(class extends HTMLElement {
         const pageCount = file.size <= SYNC_SCAN_LIMIT ? countPdfPagesSync(file) : await countPdfPages(file)
 
         if (pageCount && pageCount > PAGE_LIMIT) {
-          reportBlocked({ pageCount, bucket: bucketFor(pageCount), surface: 'dashboard', fileSize: file.size })
+          reportBlocked({ pageCount, surface: 'dashboard', fileSize: file.size })
 
           this.input.value = ''
 
