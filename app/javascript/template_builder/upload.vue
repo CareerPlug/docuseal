@@ -41,6 +41,7 @@
 
 <script>
 import { IconUpload, IconInnerShadowTop } from '@tabler/icons-vue'
+import { PAGE_LIMIT, SYNC_SCAN_LIMIT, countPdfPages, countPdfPagesSync, reportBlocked } from '../lib/pdf_page_limit_guard'
 
 export default {
   name: 'DocumentsUpload',
@@ -77,6 +78,23 @@ export default {
   methods: {
     async upload () {
       this.isLoading = true
+
+      for (const file of this.$refs.input.files) {
+        // Small files scan synchronously so allow-case uploads still dispatch
+        // in the change-event task; large files use the async chunked reader.
+        const pageCount = file.size <= SYNC_SCAN_LIMIT ? countPdfPagesSync(file) : await countPdfPages(file)
+
+        if (pageCount && pageCount > PAGE_LIMIT) {
+          reportBlocked({ pageCount, surface: 'builder', fileSize: file.size })
+
+          this.isLoading = false
+          this.$refs.input.value = ''
+
+          window.dispatchEvent(new CustomEvent('docuseal:page-limit-blocked', { detail: { pageCount } }))
+
+          return
+        }
+      }
 
       const formData = new FormData(this.$refs.form)
       
