@@ -196,10 +196,15 @@ module Submissions
 
           # HexaPDF's pages[nil] does `nil < 0` and raises. `page` is a
           # permitted-but-not-required area param, so a malformed/imported area
-          # can omit it. Skip it, but log so silently-incomplete signed docs stay visible.
+          # can omit it. Skip it, but report so silently-incomplete signed docs stay visible.
           if area['page'].nil?
             Rails.logger.warn(
               "Skipping field area with no page (submitter=#{submitter.id}, attachment=#{area['attachment_uuid']})"
+            )
+            Airbrake.notify(
+              'Skipping field area with no page in result PDF',
+              submitter_id: submitter.id, template_id: submitter.submission.template_id,
+              field_uuid: field['uuid'], field_name: field['name'], attachment_uuid: area['attachment_uuid']
             )
             next
           end

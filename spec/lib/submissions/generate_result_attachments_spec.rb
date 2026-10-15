@@ -61,7 +61,10 @@ RSpec.describe Submissions::GenerateResultAttachments do
     content.to_s.match?(/Tj|TJ/)
   end
 
-  before { allow(Rails.logger).to receive(:warn) }
+  before do
+    allow(Rails.logger).to receive(:warn)
+    allow(Airbrake).to receive(:notify)
+  end
 
   describe '.fill_submitter_fields with a missing area page' do
     def assign_field_area(area)
@@ -81,6 +84,15 @@ RSpec.describe Submissions::GenerateResultAttachments do
       it 'logs that the area was skipped' do
         fill
         expect(Rails.logger).to have_received(:warn).with(/Skipping field area with no page/)
+      end
+
+      it 'reports the skipped area to Airbrake' do
+        fill
+        expect(Airbrake).to have_received(:notify).with(
+          'Skipping field area with no page in result PDF',
+          hash_including(submitter_id: submitter.id, template_id: submission.template_id,
+                         attachment_uuid: attachment_uuid)
+        )
       end
     end
 
@@ -107,6 +119,11 @@ RSpec.describe Submissions::GenerateResultAttachments do
       it 'does not log a skipped-no-page warning (the guard only catches nil)' do
         fill
         expect(Rails.logger).not_to have_received(:warn).with(/Skipping field area with no page/)
+      end
+
+      it 'does not report to Airbrake' do
+        fill
+        expect(Airbrake).not_to have_received(:notify)
       end
     end
   end
