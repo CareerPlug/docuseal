@@ -61,12 +61,17 @@ RSpec.describe Submissions::GenerateResultAttachments do
     content.to_s.match?(/Tj|TJ/)
   end
 
-  before { allow(Rails.logger).to receive(:warn) }
+  before do
+    allow(Rails.logger).to receive(:warn)
+    allow(Airbrake).to receive(:notify)
+  end
 
   describe '.fill_submitter_fields with a missing area page' do
+    let(:field_uuid) { SecureRandom.uuid }
+
     def assign_field_area(area)
       assign_fields(
-        [{ 'uuid' => SecureRandom.uuid, 'submitter_uuid' => submitter.uuid,
+        [{ 'uuid' => field_uuid, 'name' => 'Notes', 'submitter_uuid' => submitter.uuid,
            'type' => 'text', 'areas' => [area] }]
       )
     end
@@ -80,7 +85,21 @@ RSpec.describe Submissions::GenerateResultAttachments do
 
       it 'logs that the area was skipped' do
         fill
-        expect(Rails.logger).to have_received(:warn).with(/Skipping field area with no page/)
+        expect(Rails.logger).to have_received(:warn).with(/Skipped field areas in result PDF/)
+      end
+
+      it 'reports the skipped area to Airbrake' do
+        fill
+        expect(Airbrake).to have_received(:notify).with(
+          'Skipped field areas in result PDF',
+          hash_including(
+            submitter_id: submitter.id,
+            template_id: submission.template_id,
+            skipped_count: 1,
+            skipped_areas: [hash_including(reason: 'no_page', field_uuid:, field_name: 'Notes',
+                                           attachment_uuid:)]
+          )
+        )
       end
     end
 
@@ -93,20 +112,56 @@ RSpec.describe Submissions::GenerateResultAttachments do
 
       it 'logs that the area was skipped' do
         fill
-        expect(Rails.logger).to have_received(:warn).with(/Skipping field area with no page/)
+        expect(Rails.logger).to have_received(:warn).with(/Skipped field areas in result PDF/)
       end
     end
 
     context 'when the area page is out of range' do
       before { assign_field_area('attachment_uuid' => attachment_uuid, 'page' => 5) }
 
-      it 'does not raise (existing next-if-page-nil handling still applies)' do
+      it 'does not raise' do
         expect { fill }.not_to raise_error
       end
 
-      it 'does not log a skipped-no-page warning (the guard only catches nil)' do
+      it 'reports the skipped area to Airbrake' do
         fill
-        expect(Rails.logger).not_to have_received(:warn).with(/Skipping field area with no page/)
+        expect(Airbrake).to have_received(:notify).with(
+          'Skipped field areas in result PDF',
+          hash_including(skipped_count: 1,
+                         skipped_areas: [hash_including(reason: 'page_out_of_range', page: 5)])
+        )
+      end
+    end
+
+    context 'when every area of a radio field has no page' do
+      let(:option_uuids) { Array.new(4) { SecureRandom.uuid } }
+
+      before do
+        assign_fields(
+          [{ 'uuid' => field_uuid, 'name' => 'Citizenship', 'submitter_uuid' => submitter.uuid,
+             'type' => 'radio',
+             'options' => option_uuids.map.with_index { |uuid, i| { 'uuid' => uuid, 'value' => "Option #{i}" } },
+             'areas' => option_uuids.map { |uuid| { 'attachment_uuid' => attachment_uuid, 'option_uuid' => uuid } } }],
+          { field_uuid => 'Option 0' }
+        )
+      end
+
+      it 'sends one Airbrake notice listing every skipped option' do
+        fill
+        expect(Airbrake).to have_received(:notify).once.with(
+          'Skipped field areas in result PDF',
+          hash_including(skipped_count: 4,
+                         skipped_areas: option_uuids.map { |uuid| hash_including(option_uuid: uuid) })
+        )
+      end
+    end
+
+    context 'when every area has a valid page' do
+      before { assign_field_area(base_area) }
+
+      it 'does not report to Airbrake' do
+        fill
+        expect(Airbrake).not_to have_received(:notify)
       end
     end
   end

@@ -185,6 +185,8 @@ module Submissions
 
       locale = submitter.metadata.fetch('lang', account.locale)
 
+      skipped_areas = []
+
       submitter.submission.template_fields.each do |field|
         next if field['type'] == 'heading' && !with_headings
         next if field['submitter_uuid'] != submitter.uuid && field['type'] != 'heading'
@@ -196,17 +198,18 @@ module Submissions
 
           # HexaPDF's pages[nil] does `nil < 0` and raises. `page` is a
           # permitted-but-not-required area param, so a malformed/imported area
-          # can omit it. Skip it, but log so silently-incomplete signed docs stay visible.
+          # can omit it. Skip it, but report so silently-incomplete signed docs stay visible.
           if area['page'].nil?
-            Rails.logger.warn(
-              "Skipping field area with no page (submitter=#{submitter.id}, attachment=#{area['attachment_uuid']})"
-            )
+            skipped_areas << skipped_area_details(field, area, 'no_page')
             next
           end
 
           page = pdf.pages[area['page']]
 
-          next if page.nil?
+          if page.nil?
+            skipped_areas << skipped_area_details(field, area, 'page_out_of_range')
+            next
+          end
 
           page.rotate(0, flatten: true) if page[:Rotate] != 0
 
@@ -629,7 +632,36 @@ module Submissions
         end
       end
 
+      report_skipped_areas(submitter, skipped_areas)
+
       pdfs_index
+    end
+
+    def skipped_area_details(field, area, reason)
+      {
+        reason:,
+        field_uuid: field['uuid'],
+        field_name: field['name'],
+        option_uuid: area['option_uuid'],
+        attachment_uuid: area['attachment_uuid'],
+        page: area['page']
+      }
+    end
+
+    # One notice per submitter, so Airbrake's occurrence count means affected documents, not areas.
+    def report_skipped_areas(submitter, skipped_areas)
+      return if skipped_areas.empty?
+
+      message = 'Skipped field areas in result PDF'
+
+      Rails.logger.warn("#{message} (submitter=#{submitter.id}): #{skipped_areas.to_json}")
+      Airbrake.notify(
+        message,
+        submitter_id: submitter.id,
+        template_id: submitter.submission.template_id,
+        skipped_count: skipped_areas.size,
+        skipped_areas:
+      )
     end
 
     def build_pdf_attachment(pdf:, submitter:, pkcs:, tsa_url:, uuid:, name:)
