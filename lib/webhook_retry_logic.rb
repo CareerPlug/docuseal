@@ -18,7 +18,18 @@ module WebhookRetryLogic
     return false if attempt > MAX_ATTEMPTS
     return true unless Docuseal.multitenant?
 
-    eligible_for_retries?(record)
+    # ATS-linked accounts are provisioned without the plan AccountConfig that eligible_for_retries?
+    # requires, and these webhooks are their only status path, so they retry regardless of plan
+    # entitlement. This deployment does not set MULTITENANT, so the gate above is already bypassed in
+    # production: this removes a latent trap rather than adding retry volume. Do not widen it into a
+    # general retry loosening -- every other account keeps today's no-retry entitlement, and retries
+    # stay bounded by MAX_ATTEMPTS with the existing backoff.
+    #
+    # respond_to? and & are both required: eligible_for_retries? only tolerates a missing account in
+    # its Template branch, and a Template can legitimately have no account.
+    return true if record.respond_to?(:account) && record.account&.external_account_id.present?
+
+    eligible_for_retries?(record) || false
   end
 
   # Checks if a record is eligible for webhook retries in multitenant mode
