@@ -75,6 +75,18 @@ class WebhookUrl < ApplicationRecord
     self.sha1 = Digest::SHA1.hexdigest(url)
   end
 
+  def careerplug_secret?
+    secret.is_a?(Hash) && secret.key?('X-CareerPlug-Secret')
+  end
+
+  # Delivery reporting is only safe for rows that carry the CareerPlug header
+  # AND belong to an ATS-linked owner. The header name is user-settable through
+  # the webhook secret controller, so the header alone proves nothing, and a
+  # transient ownerless row (a delivery probe) is not a delivery at all.
+  def careerplug_delivery?
+    careerplug_secret? && (account&.external_account_id.present? || partnership_id.present?)
+  end
+
   private
 
   def validate_owner_presence
