@@ -224,6 +224,29 @@ RSpec.describe CareerplugWebhookBackfill do
       end
     end
 
+    context 'when an ATS-linked Account has only a customer row carrying the CareerPlug header' do
+      it 'leaves the customer row untouched and creates the canonical row' do
+        account = create_owner(:account, external_account_id: 9_104)
+        customer_url = 'https://customer.example.com/hooks'
+        customer_secret = { 'X-CareerPlug-Secret' => 'customer_secret' }
+        customer = build(:webhook_url, account: account, url: customer_url,
+                                       secret: customer_secret).tap(&:save!)
+
+        result = run
+
+        expect(result.created).to eq(1)
+        expect(result.updated).to eq(0)
+        expect(customer.reload.url).to eq(customer_url)
+        expect(customer.secret).to eq(customer_secret)
+        expect(WebhookUrl.where(account_id: account.id).count).to eq(2)
+
+        canonical = WebhookUrl.find_by(account_id: account.id, sha1: Digest::SHA1.hexdigest(target_url))
+        expect(canonical).to be_present
+        expect(canonical.id).not_to eq(customer.id)
+        expect(canonical.secret).to eq(careerplug_secret)
+      end
+    end
+
     context 'when an ATS-linked Account has stale and canonical rows' do
       it 'records the duplicate warning and mutates neither row' do
         account = create_owner(:account, external_account_id: 9_103)

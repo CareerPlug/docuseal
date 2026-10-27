@@ -80,6 +80,11 @@ module SendWebhookRequest
   # owner notify, while customer webhooks keep today's Airbrake-silent behaviour
   # (they still gain the warning below, so alert volume stays flat).
   def notify_failed_delivery(webhook_url, event_type, status)
+    # Unsaved rows are synthetic delivery probes, not deliveries: reporting them
+    # here would log an empty webhook_url_id and a misleading failure. The
+    # health check reports the probe outcome itself.
+    return if webhook_url.id.nil?
+
     message = "DocuSeal webhook delivery failed (#{event_type}, webhook_url_id=#{webhook_url.id}): status #{status}"
 
     Rails.logger.warn(message)

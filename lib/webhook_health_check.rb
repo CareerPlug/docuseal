@@ -123,10 +123,11 @@ module WebhookHealthCheck
     outcome = probe_delivery
     return outcome if NON_ALERTING_OUTCOMES.include?(outcome)
 
+    url = ENV.fetch('CAREERPLUG_WEBHOOK_URL', nil)
     message = format(
       'DocuSeal ATS webhook delivery probe failed: %<outcome>p (expected url sha1=%<sha1>s)',
       outcome: outcome,
-      sha1: sha1_for(ENV.fetch('CAREERPLUG_WEBHOOK_URL', nil))
+      sha1: sha1_for(url)
     )
     Rails.logger.error(message)
     Airbrake.notify(message)

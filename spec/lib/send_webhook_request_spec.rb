@@ -71,6 +71,23 @@ RSpec.describe SendWebhookRequest do
       end
     end
 
+    context 'when a non-2xx status comes from an unsaved probe row' do
+      let(:probe_url) { 'https://probe.example.com/api/docuseal/events' }
+      let(:probe) do
+        WebhookUrl.new(url: probe_url, secret: { 'X-CareerPlug-Secret' => 'ats-secret-value' })
+      end
+
+      before { stub_request(:post, probe_url).to_return(status: 401) }
+
+      it 'does not log a delivery warning or notify Airbrake' do
+        described_class.call(probe, event_type: 'health.check', data: {})
+
+        expect(probe.id).to be_nil
+        expect(Rails.logger).not_to have_received(:warn)
+        expect(Airbrake).not_to have_received(:notify)
+      end
+    end
+
     context 'when the request raises a Faraday::Error (transport failure)' do
       before do
         stub_request(:post, 'https://example.com/hook').to_raise(Faraday::ConnectionFailed.new('boom'))
