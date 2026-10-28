@@ -91,4 +91,62 @@ describe WebhookUrl do
       end
     end
   end
+
+  describe '#careerplug_secret?' do
+    it 'is true when the secret contains the CareerPlug header' do
+      webhook = build(:webhook_url, secret: { 'X-CareerPlug-Secret' => 'secret' })
+
+      expect(webhook.careerplug_secret?).to be(true)
+    end
+
+    it 'is false when the secret lacks the CareerPlug header' do
+      webhook = build(:webhook_url, secret: { 'X-Other-Secret' => 'secret' })
+
+      expect(webhook.careerplug_secret?).to be(false)
+    end
+  end
+
+  describe '#careerplug_delivery?' do
+    let(:careerplug_secret) { { 'X-CareerPlug-Secret' => 'secret' } }
+
+    it 'is true for an ATS-linked account row' do
+      account = create(:account, external_account_id: 9_001)
+      webhook = build(:webhook_url, account: account, secret: careerplug_secret)
+
+      expect(webhook.careerplug_delivery?).to be(true)
+    end
+
+    it 'is false for a non ATS-linked account row carrying the header' do
+      account = create(:account)
+      webhook = build(:webhook_url, account: account, secret: careerplug_secret)
+
+      expect(webhook.careerplug_secret?).to be(true)
+      expect(webhook.careerplug_delivery?).to be(false)
+    end
+
+    it 'is true for a partnership row carrying the header' do
+      stub_const('ENV', ENV.to_hash.except('CAREERPLUG_WEBHOOK_URL', 'CAREERPLUG_WEBHOOK_SECRET'))
+
+      partnership = create(:partnership)
+      webhook = build(:webhook_url, account: nil, partnership: partnership, secret: careerplug_secret)
+
+      expect(webhook.careerplug_delivery?).to be(true)
+    end
+
+    it 'is false without the CareerPlug header' do
+      account = create(:account, external_account_id: 9_002)
+      webhook = build(:webhook_url, account: account, secret: { 'X-Other-Secret' => 'secret' })
+
+      expect(webhook.careerplug_delivery?).to be(false)
+    end
+
+    it 'is false for an ownerless transient row' do
+      # The delivery probe builds WebhookUrl.new without an owner; its synthetic
+      # failures must never be reported as ATS delivery failures.
+      webhook = described_class.new(url: 'https://example.com/webhook', secret: careerplug_secret)
+
+      expect(webhook.careerplug_secret?).to be(true)
+      expect(webhook.careerplug_delivery?).to be(false)
+    end
+  end
 end

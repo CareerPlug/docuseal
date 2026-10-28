@@ -31,7 +31,11 @@ module SendWebhookRequest
     Airbrake.notify("DocuSeal outbound webhook transport error (#{event_type}): #{e.class}")
     nil
   else
-    record_delivery(event_type, response.status.to_i)
+    status = response.status.to_i
+    record_delivery(event_type, status)
+    # 3xx is reported here but still not retried: WebhookRetryLogic#should_retry?
+    # only retries transport errors (nil) and statuses >= 400.
+    notify_failed_delivery(webhook_url, event_type, status) unless status.between?(200, 299)
     response
   end
 
@@ -65,5 +69,25 @@ module SendWebhookRequest
     bucket = status&.between?(200, 299) ? 'success' : 'failure'
     ::NewRelic::Agent.record_metric("DocuSeal/Webhook/#{event_type}/#{bucket}", 1)
     ::NewRelic::Agent.record_metric("DocuSeal/Webhook/total/#{bucket}", 1)
+  end
+
+  # Reports a non-2xx delivery. The message carries only the event, the row id
+  # and the numeric status -- never the URL, the secret or the response body --
+  # so it is safe for logs and for this public repo.
+  #
+  # Airbrake is gated on careerplug_delivery? because the secret header name is
+  # user-settable: only rows carrying the CareerPlug header on an ATS-linked
+  # owner notify, while customer webhooks keep today's Airbrake-silent behaviour
+  # (they still gain the warning below, so alert volume stays flat).
+  def notify_failed_delivery(webhook_url, event_type, status)
+    # Unsaved rows are synthetic delivery probes, not deliveries: reporting them
+    # here would log an empty webhook_url_id and a misleading failure. The
+    # health check reports the probe outcome itself.
+    return if webhook_url.id.nil?
+
+    message = "DocuSeal webhook delivery failed (#{event_type}, webhook_url_id=#{webhook_url.id}): status #{status}"
+
+    Rails.logger.warn(message)
+    Airbrake.notify(message) if webhook_url.careerplug_delivery?
   end
 end

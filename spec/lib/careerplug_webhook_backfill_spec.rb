@@ -14,6 +14,9 @@ RSpec.describe CareerplugWebhookBackfill do
     ENV.to_h.merge('CAREERPLUG_WEBHOOK_URL' => target_url, 'CAREERPLUG_WEBHOOK_SECRET' => target_secret)
   end
   let(:callback_disabled_env) { ENV.to_h.except('CAREERPLUG_WEBHOOK_URL', 'CAREERPLUG_WEBHOOK_SECRET') }
+  let(:careerplug_secret) { { 'X-CareerPlug-Secret' => target_secret } }
+  let(:stale_url) { 'https://stale.example.com/api/docuseal/events' }
+  let(:stale_secret) { { 'X-CareerPlug-Secret' => 'stale_secret' } }
 
   def run(dry_run: false)
     described_class.run(dry_run: dry_run)
@@ -164,6 +167,110 @@ RSpec.describe CareerplugWebhookBackfill do
       end
     end
 
+    context 'when an ATS-linked Account webhook points at a stale URL' do
+      it 'repairs the row in place and keeps a single row for the owner' do
+        account = create_owner(:account, external_account_id: 9_101)
+        webhook = build(:webhook_url, account: account, url: stale_url, events: %w[form.started],
+                                      secret: stale_secret).tap(&:save!)
+        original_id = webhook.id
+
+        result = run
+
+        expect(WebhookUrl.where(account_id: account.id).count).to eq(1)
+        expect(result.created).to eq(0)
+        expect(result.updated).to eq(1)
+
+        webhook.reload
+        expect(webhook.id).to eq(original_id)
+        expect(webhook.url).to eq(target_url)
+        expect(webhook.sha1).to eq(Digest::SHA1.hexdigest(target_url))
+        expect(webhook.events).to eq(WebhookUrl::CAREERPLUG_ACCOUNT_EVENTS)
+        expect(webhook.secret).to eq(careerplug_secret)
+      end
+
+      it 'is idempotent after the repair' do
+        account = create_owner(:account, external_account_id: 9_102)
+        build(:webhook_url, account: account, url: stale_url, secret: stale_secret).tap(&:save!)
+
+        run
+        result = run
+
+        expect(result.created).to eq(0)
+        expect(result.updated).to eq(0)
+        expect(result.unchanged).to eq(1)
+        expect(WebhookUrl.where(account_id: account.id).count).to eq(1)
+      end
+    end
+
+    context 'when a non ATS-linked Account webhook carries the CareerPlug header' do
+      it 'leaves the customer row and its secret untouched' do
+        account = create_owner(:account)
+        customer_url = 'https://customer.example.com/hooks'
+        customer_secret = { 'X-CareerPlug-Secret' => 'customer_secret' }
+        customer = build(:webhook_url, account: account, url: customer_url,
+                                       secret: customer_secret).tap(&:save!)
+
+        expect { run }.to change(WebhookUrl, :count).by(1)
+
+        customer.reload
+        expect(customer.url).to eq(customer_url)
+        expect(customer.secret).to eq(customer_secret)
+        expect(customer.events).to eq(%w[form.viewed form.started form.completed form.declined])
+
+        canonical = WebhookUrl.find_by(account_id: account.id, sha1: Digest::SHA1.hexdigest(target_url))
+        expect(canonical).to be_present
+        expect(canonical.id).not_to eq(customer.id)
+        expect(canonical.secret).to eq(careerplug_secret)
+      end
+    end
+
+    context 'when an ATS-linked Account has only a customer row carrying the CareerPlug header' do
+      it 'leaves the customer row untouched and creates the canonical row' do
+        account = create_owner(:account, external_account_id: 9_104)
+        customer_url = 'https://customer.example.com/hooks'
+        customer_secret = { 'X-CareerPlug-Secret' => 'customer_secret' }
+        customer = build(:webhook_url, account: account, url: customer_url,
+                                       secret: customer_secret).tap(&:save!)
+
+        result = run
+
+        expect(result.created).to eq(1)
+        expect(result.updated).to eq(0)
+        expect(customer.reload.url).to eq(customer_url)
+        expect(customer.secret).to eq(customer_secret)
+        expect(WebhookUrl.where(account_id: account.id).count).to eq(2)
+
+        canonical = WebhookUrl.find_by(account_id: account.id, sha1: Digest::SHA1.hexdigest(target_url))
+        expect(canonical).to be_present
+        expect(canonical.id).not_to eq(customer.id)
+        expect(canonical.secret).to eq(careerplug_secret)
+      end
+    end
+
+    context 'when an ATS-linked Account has stale and canonical rows' do
+      it 'records the duplicate warning and mutates neither row' do
+        account = create_owner(:account, external_account_id: 9_103)
+        stale = build(:webhook_url, account: account, url: stale_url, events: %w[form.started],
+                                    secret: stale_secret).tap(&:save!)
+        canonical = build(:webhook_url, account: account, url: target_url,
+                                        events: WebhookUrl::CAREERPLUG_ACCOUNT_EVENTS,
+                                        secret: careerplug_secret).tap(&:save!)
+
+        result = run
+
+        expect(result.duplicate_warnings.length).to eq(1)
+        expect(result.duplicate_warnings.first[:webhook_ids]).to contain_exactly(stale.id, canonical.id)
+        expect(result.created).to eq(0)
+        expect(result.updated).to eq(0)
+        expect(WebhookUrl.where(account_id: account.id).count).to eq(2)
+
+        expect(stale.reload.url).to eq(stale_url)
+        expect(stale.secret).to eq(stale_secret)
+        expect(canonical.reload.url).to eq(target_url)
+        expect(canonical.events).to eq(WebhookUrl::CAREERPLUG_ACCOUNT_EVENTS)
+      end
+    end
+
     context 'with DRY_RUN=1' do
       it 'writes nothing but reports the would-be action' do
         create_owner(:account)
@@ -173,6 +280,19 @@ RSpec.describe CareerplugWebhookBackfill do
         # Re-running for real creates it, proving the dry run did not.
         result = run
         expect(result.created).to eq(1)
+      end
+
+      it 'does not repair a stale ATS webhook' do
+        account = create_owner(:account, external_account_id: 9_104)
+        webhook = build(:webhook_url, account: account, url: stale_url,
+                                      secret: stale_secret).tap(&:save!)
+
+        result = run(dry_run: true)
+
+        expect(result.updated).to eq(1)
+        expect(webhook.reload.url).to eq(stale_url)
+        expect(webhook.secret).to eq(stale_secret)
+        expect(webhook.sha1).to eq(Digest::SHA1.hexdigest(stale_url))
       end
     end
 

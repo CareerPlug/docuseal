@@ -40,7 +40,7 @@ class CareerplugWebhookBackfill
   private
 
   def upsert(owner, events)
-    existing = owner.webhook_urls.where(sha1: target_sha1).to_a
+    existing = matching_webhooks(owner)
 
     if existing.size > 1
       warn_duplicates(owner, existing)
@@ -55,6 +55,39 @@ class CareerplugWebhookBackfill
     else
       @result.unchanged += 1
     end
+  end
+
+  # ATS-linked owners are matched by the CareerPlug header plus the target URL
+  # path instead of the sha1 of the current env URL, so a corrected
+  # CAREERPLUG_WEBHOOK_URL repairs the drifted row in place instead of creating
+  # a sibling. Requiring the same path keeps a customer row that merely repeats
+  # the (user-settable) header name from being repointed when only the host
+  # drifts. Every other owner keeps the sha1 lookup: a customer row must never
+  # be repointed or have its secret replaced with CAREERPLUG_WEBHOOK_SECRET.
+  def matching_webhooks(owner)
+    return owner.webhook_urls.where(sha1: target_sha1).to_a unless ats_linked_owner?(owner) && target_path.present?
+
+    owner.webhook_urls.to_a.select { |webhook| ats_row?(webhook) }
+  end
+
+  def ats_row?(webhook)
+    webhook.careerplug_secret? && url_path(webhook.url) == target_path
+  end
+
+  def target_path
+    @target_path ||= url_path(target_url)
+  end
+
+  def url_path(url)
+    return if url.blank?
+
+    URI(url).path.presence
+  rescue URI::Error
+    nil
+  end
+
+  def ats_linked_owner?(owner)
+    owner.is_a?(Partnership) || owner.external_account_id.present?
   end
 
   def warn_duplicates(owner, existing)

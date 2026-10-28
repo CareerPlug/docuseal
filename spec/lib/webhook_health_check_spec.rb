@@ -139,4 +139,218 @@ RSpec.describe WebhookHealthCheck do
       end
     end
   end
+
+  describe '.probe_delivery' do
+    let(:ats_secret) { 'delivery_probe_secret' }
+
+    around do |example|
+      previous = ENV.fetch('CAREERPLUG_WEBHOOK_SECRET', nil)
+      ENV['CAREERPLUG_WEBHOOK_SECRET'] = ats_secret
+      example.run
+    ensure
+      ENV['CAREERPLUG_WEBHOOK_SECRET'] = previous
+    end
+
+    def stub_probe_response(status)
+      response = status.nil? ? nil : instance_double(Faraday::Response, status: status)
+      allow(SendWebhookRequest).to receive(:call).and_return(response)
+    end
+
+    it 'returns :healthy for a 2xx response' do
+      stub_probe_response(200)
+
+      expect(described_class.probe_delivery).to eq(:healthy)
+    end
+
+    it 'returns :secret_rejected for 401' do
+      stub_probe_response(401)
+
+      expect(described_class.probe_delivery).to eq(:secret_rejected)
+    end
+
+    it 'returns :secret_rejected for 403' do
+      stub_probe_response(403)
+
+      expect(described_class.probe_delivery).to eq(:secret_rejected)
+    end
+
+    it 'returns :endpoint_not_found for 404' do
+      stub_probe_response(404)
+
+      expect(described_class.probe_delivery).to eq(:endpoint_not_found)
+    end
+
+    it 'returns :endpoint_error for a 5xx response' do
+      stub_probe_response(500)
+
+      expect(described_class.probe_delivery).to eq(:endpoint_error)
+    end
+
+    it 'returns :unexpected_status for any other non-2xx response' do
+      stub_probe_response(422)
+
+      expect(described_class.probe_delivery).to eq(:unexpected_status)
+    end
+
+    it 'returns :transport_error when SendWebhookRequest.call returns nil' do
+      stub_probe_response(nil)
+
+      expect(described_class.probe_delivery).to eq(:transport_error)
+    end
+
+    it 'passes a transient WebhookUrl built from ENV with the probe event and an empty payload' do
+      allow(WebhookUrl).to receive(:new).and_call_original
+      allow(SendWebhookRequest).to receive(:call)
+        .and_return(instance_double(Faraday::Response, status: 200))
+
+      described_class.probe_delivery
+
+      expect(WebhookUrl).to have_received(:new)
+        .with(url: ats_url, secret: { 'X-CareerPlug-Secret' => ats_secret })
+      expect(SendWebhookRequest).to have_received(:call)
+        .with(an_instance_of(WebhookUrl), event_type: 'health.check', data: {})
+    end
+
+    context 'when CAREERPLUG_WEBHOOK_URL is blank' do
+      around do |example|
+        previous = ENV.fetch('CAREERPLUG_WEBHOOK_URL', nil)
+        ENV['CAREERPLUG_WEBHOOK_URL'] = ''
+        example.run
+      ensure
+        ENV['CAREERPLUG_WEBHOOK_URL'] = previous
+      end
+
+      it 'returns :unconfigured without sending a request' do
+        allow(SendWebhookRequest).to receive(:call)
+
+        expect(described_class.probe_delivery).to eq(:unconfigured)
+
+        expect(SendWebhookRequest).not_to have_received(:call)
+      end
+    end
+
+    context 'when CAREERPLUG_WEBHOOK_SECRET is blank' do
+      around do |example|
+        previous = ENV.fetch('CAREERPLUG_WEBHOOK_SECRET', nil)
+        ENV['CAREERPLUG_WEBHOOK_SECRET'] = ''
+        example.run
+      ensure
+        ENV['CAREERPLUG_WEBHOOK_SECRET'] = previous
+      end
+
+      it 'returns :unconfigured without sending a request' do
+        allow(SendWebhookRequest).to receive(:call)
+
+        expect(described_class.probe_delivery).to eq(:unconfigured)
+
+        expect(SendWebhookRequest).not_to have_received(:call)
+      end
+    end
+
+    context 'when CAREERPLUG_WEBHOOK_URL is malformed' do
+      around do |example|
+        previous = ENV.fetch('CAREERPLUG_WEBHOOK_URL', nil)
+        ENV['CAREERPLUG_WEBHOOK_URL'] = 'https://exa mple.com/api/docuseal/events'
+        example.run
+      ensure
+        ENV['CAREERPLUG_WEBHOOK_URL'] = previous
+      end
+
+      it 'returns :invalid_url without raising' do
+        expect(described_class.probe_delivery).to eq(:invalid_url)
+      end
+    end
+
+    it 'posts the env secret header and the health.check payload to the env url' do
+      stub_request(:post, ats_url).to_return(status: 200, body: '{}')
+
+      expect(described_class.probe_delivery).to eq(:healthy)
+
+      expect(
+        a_request(:post, ats_url).with do |request|
+          headers = request.headers.transform_keys(&:downcase)
+          payload = JSON.parse(request.body)
+          headers['x-careerplug-secret'] == ats_secret &&
+            payload.slice('event_type', 'data') == { 'event_type' => 'health.check', 'data' => {} }
+        end
+      ).to have_been_made.once
+    end
+  end
+
+  describe '.report_delivery!' do
+    let(:ats_secret) { 'delivery_probe_secret' }
+    let(:reported_messages) { [] }
+
+    around do |example|
+      previous = ENV.fetch('CAREERPLUG_WEBHOOK_SECRET', nil)
+      ENV['CAREERPLUG_WEBHOOK_SECRET'] = ats_secret
+      example.run
+    ensure
+      ENV['CAREERPLUG_WEBHOOK_SECRET'] = previous
+    end
+
+    before do
+      allow(Rails.logger).to receive(:error) { |message| reported_messages << message }
+      allow(Airbrake).to receive(:notify) { |message| reported_messages << message }
+    end
+
+    context 'when the probe reports a failing outcome' do
+      before do
+        allow(SendWebhookRequest).to receive(:call)
+          .and_return(instance_double(Faraday::Response, status: 401))
+      end
+
+      it 'logs and notifies Airbrake with the outcome and expected url sha1 but not the url or secret' do
+        described_class.report_delivery!
+
+        expect(reported_messages.size).to eq(2)
+        expect(reported_messages).to all(include(':secret_rejected'))
+        expect(reported_messages).to all(include(Digest::SHA1.hexdigest(ats_url)))
+
+        joined = reported_messages.join
+        expect(joined).not_to include(ats_url)
+        expect(joined).not_to include(ats_secret)
+      end
+    end
+
+    context 'when the probe reports a transport failure' do
+      before { allow(SendWebhookRequest).to receive(:call).and_return(nil) }
+
+      it 'alerts and returns :transport_error' do
+        expect(described_class.report_delivery!).to eq(:transport_error)
+
+        expect(reported_messages.size).to eq(2)
+        expect(reported_messages).to all(include(':transport_error'))
+      end
+    end
+
+    context 'when the probe is healthy' do
+      before do
+        allow(SendWebhookRequest).to receive(:call)
+          .and_return(instance_double(Faraday::Response, status: 200))
+      end
+
+      it 'does not alert and returns :healthy' do
+        expect(described_class.report_delivery!).to eq(:healthy)
+
+        expect(reported_messages).to be_empty
+      end
+    end
+
+    context 'when the probe is unconfigured' do
+      around do |example|
+        previous = ENV.fetch('CAREERPLUG_WEBHOOK_URL', nil)
+        ENV['CAREERPLUG_WEBHOOK_URL'] = ''
+        example.run
+      ensure
+        ENV['CAREERPLUG_WEBHOOK_URL'] = previous
+      end
+
+      it 'does not alert and returns :unconfigured' do
+        expect(described_class.report_delivery!).to eq(:unconfigured)
+
+        expect(reported_messages).to be_empty
+      end
+    end
+  end
 end
