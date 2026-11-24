@@ -117,7 +117,7 @@ bundle exec ./bin/shakapacker-dev-server
 - `tailwind.config.js`: CSS framework configuration
 
 ## Development Environment
-- Ruby 3.4.2 required
+- Ruby 3.4.13 required
 - Node.js 18 for asset compilation
 - SQLite for development (PostgreSQL supported)
 - Redis for background jobs
