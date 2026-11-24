@@ -7,7 +7,7 @@ This guide will help you set up DocuSeal locally for development and testing pur
 Before you begin, make sure you have the following installed on your system:
 
 ### Required Software
-- **Ruby 3.4.2** - Use your preferred Ruby version manager (rbenv, rvm, asdf, etc.)
+- **Ruby 3.4.13** - Use your preferred Ruby version manager (rbenv, rvm, asdf, etc.)
 - **Node.js 18** - Required for frontend assets compilation
 - **Yarn** - Package manager for Node.js dependencies
 - **PostgreSQL** (optional) - For production-like database setup
@@ -29,20 +29,20 @@ cd docuseal
 
 ### 2. Install Ruby Dependencies
 
-Make sure you're using Ruby 3.4.2:
+Make sure you're using Ruby 3.4.13:
 
 ```bash
 # If using rbenv
-rbenv install 3.4.2
-rbenv local 3.4.2
+rbenv install 3.4.13
+rbenv local 3.4.13
 
 # If using rvm
-rvm install 3.4.2
-rvm use 3.4.2
+rvm install 3.4.13
+rvm use 3.4.13
 
 # If using asdf
-asdf install ruby 3.4.2
-asdf local ruby 3.4.2
+asdf install ruby 3.4.13
+asdf local ruby 3.4.13
 ```
 
 Install Ruby gems:
